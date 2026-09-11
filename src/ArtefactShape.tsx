@@ -64,9 +64,15 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 		[editor, shape.id]
 	)
 
+	const copy = () => {
+		navigator.clipboard.writeText(shape.props.code)
+	}
+
 	return (
 		<HTMLContainer
 			style={{
+				display: 'flex',
+				flexDirection: 'column',
 				boxSizing: 'border-box',
 				background: '#fff',
 				border: '2px solid var(--tl-color-text-1)',
@@ -74,16 +80,74 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 				overflow: 'hidden',
 			}}
 		>
-			{isEditing ? (
-				<CodeEditor shape={shape} />
-			) : (
-				<iframe
-					srcDoc={shape.props.code}
-					sandbox="allow-scripts"
-					title="Artefact preview"
-					style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }}
-				/>
-			)}
+			<div
+				style={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					gap: 8,
+					padding: '8px 12px',
+					borderBottom: '1px solid var(--tl-color-divider)',
+					pointerEvents: 'all',
+				}}
+			>
+				<span
+					style={{
+						fontWeight: 600,
+						fontSize: 13,
+						letterSpacing: '0.05em',
+						textTransform: 'uppercase',
+					}}
+				>
+					Artefact
+				</span>
+				<button
+					type="button"
+					aria-label="Copy code"
+					onPointerDown={(e) => e.stopPropagation()}
+					onClick={copy}
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						width: 26,
+						height: 26,
+						padding: 0,
+						border: 'none',
+						borderRadius: 6,
+						background: 'var(--tl-color-primary)',
+						color: '#fff',
+						cursor: 'pointer',
+					}}
+				>
+					<svg
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						aria-hidden="true"
+					>
+						<rect x="9" y="9" width="13" height="13" rx="2" />
+						<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+					</svg>
+				</button>
+			</div>
+			<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+				{isEditing ? (
+					<CodeEditor shape={shape} />
+				) : (
+					<iframe
+						srcDoc={shape.props.code}
+						sandbox="allow-scripts"
+						title="Artefact preview"
+						style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'none' }}
+					/>
+				)}
+			</div>
 		</HTMLContainer>
 	)
 }

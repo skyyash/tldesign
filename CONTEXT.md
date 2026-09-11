@@ -36,9 +36,10 @@ Build check: `npm run build`
 
 ### 3. HTML artefact shape + custom toolbar tools (2026-09-11)
 
-- New `artefact` shape (`src/ArtefactShape.tsx`): HTML preview in an iframe
-  (`srcDoc`, `sandbox="allow-scripts"`). Double-click (or select + Enter) to
-  edit the code in a monospace textarea; edits update the preview live.
+- New `artefact` shape (`src/ArtefactShape.tsx`): fixed navbar with "Artefact"
+  title and a copy button, HTML preview in an iframe (`srcDoc`,
+  `sandbox="allow-scripts"`). Double-click (or select + Enter) to edit the code
+  in a monospace textarea; edits update the preview live.
 - Custom tools (`src/tools.ts`): `prompt` and `artefact` place a shape centered
   on click, then return to select.
 - Both tools added to the main toolbar: custom `Toolbar` component inserts
