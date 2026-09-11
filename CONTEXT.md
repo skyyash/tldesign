@@ -123,6 +123,16 @@ Build check: `npm run build`
   labelled artefacts; key + no enabled -> hint; dropdown opens above the shape
   and stays clear of its outline).
 
+### 10. chat/completions client (2026-09-11)
+
+- `src/lib/openrouter.ts`: added `chatCompletion()` (POST
+  `/api/v1/chat/completions`) with `Authorization: Bearer`, `Content-Type`, and
+  the `HTTP-Referer`/`X-Title` headers; parses `choices[0].message.content`;
+  throws on non-2xx.
+- Verified: `npm run build` and browser probes (intercepted request shows
+  correct method/headers/body; mock response parsed; real invalid key -> throws
+  401). A real success path needs a valid key.
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
@@ -131,6 +141,7 @@ Build check: `npm run build`
 
 ## Next
 
-- Wire real LLM generation: `chat/completions` client on the play button
-  (deferred earlier), so each selected model actually produces an artefact.
-- Later: design-delete IndexedDB cleanup; profile/auth.
+- Wire the prompt play button to `chatCompletion`: one artefact per selected
+  model seeded with a "Generating..." placeholder, filled with the model's HTML
+  response; error state per artefact; a run id guards stale completions on
+  re-run. Streaming later.
