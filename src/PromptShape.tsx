@@ -15,6 +15,8 @@ import {
 	useEditor,
 	useValue,
 } from 'tldraw'
+import { OpenRouterModel, displayName, getModelCatalog } from './lib/modelCatalog'
+import { useSettings } from './lib/settings'
 
 const PROMPT_TYPE = 'prompt'
 
@@ -25,8 +27,6 @@ declare module 'tldraw' {
 }
 
 export type PromptShape = TLShape<typeof PROMPT_TYPE>
-
-const MODELS = ['GPT-4o', 'Claude Sonnet', 'Gemini 1.5 Pro', 'Llama 3.1']
 
 const ARTEFACT_W = 300
 const ARTEFACT_H = 200
@@ -54,7 +54,7 @@ export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 			w: 260,
 			h: 140,
 			richText: toRichText('Describe what you want to design...'),
-			models: MODELS.slice(0, 3),
+			models: [],
 		}
 	}
 
@@ -79,14 +79,30 @@ export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 
 function PromptComponent({ shape }: { shape: PromptShape }) {
 	const editor = useEditor()
+	const { settings } = useSettings()
 	const isSelected = useValue(
 		'is selected',
 		() => shape.id === editor.getOnlySelectedShapeId(),
 		[editor, shape.id]
 	)
 
+	const [catalog, setCatalog] = useState<OpenRouterModel[] | null>(null)
 	const [open, setOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		let cancelled = false
+		getModelCatalog()
+			.then((result) => {
+				if (!cancelled) setCatalog(result.models)
+			})
+			.catch(() => {
+				// leave catalog as null; ids are shown as-is
+			})
+		return () => {
+			cancelled = true
+		}
+	}, [])
 
 	useEffect(() => {
 		if (!open) return
@@ -96,6 +112,14 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		document.addEventListener('pointerdown', onPointerDown, true)
 		return () => document.removeEventListener('pointerdown', onPointerDown, true)
 	}, [open])
+
+	const hasKey = settings.apiKey.length > 0
+	const selectedModels = shape.props.models.filter((id) => settings.enabledModels.includes(id))
+
+	const modelName = (id: string) => {
+		const model = catalog?.find((m) => m.id === id)
+		return model ? displayName(model) : id
+	}
 
 	const toggleModel = (model: string) => {
 		const has = shape.props.models.includes(model)
@@ -108,7 +132,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	const run = () => {
 		const bounds = editor.getShapePageBounds(shape)
 		if (!bounds) return
-		const models = shape.props.models
+		const models = selectedModels
 		if (models.length === 0) return
 
 		const promptX = bounds.maxX
@@ -137,7 +161,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					props: {
 						w: ARTEFACT_W,
 						h: ARTEFACT_H,
-						code: artefactCode(model),
+						code: artefactCode(modelName(model)),
 					},
 				})
 
@@ -147,7 +171,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					props: {
 						start: { x: promptX, y: promptY },
 						end: { x: outputX, y: outputMidY },
-						richText: toRichText(model),
+						richText: toRichText(modelName(model)),
 					},
 				})
 
@@ -178,7 +202,12 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		})
 	}
 
-	const modelCount = shape.props.models.length
+	const modelCount = selectedModels.length
+	const triggerLabel = !hasKey
+		? 'Connect'
+		: modelCount > 0
+			? `${modelCount} model${modelCount > 1 ? 's' : ''}`
+			: 'Models'
 
 	return (
 		<HTMLContainer
@@ -234,7 +263,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 								cursor: 'pointer',
 							}}
 						>
-							<span>{modelCount > 0 ? `${modelCount} model${modelCount > 1 ? 's' : ''}` : 'Models'}</span>
+							<span>{triggerLabel}</span>
 							<svg
 								width="10"
 								height="10"
@@ -267,28 +296,54 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 									userSelect: 'none',
 								}}
 							>
-								{MODELS.map((model) => (
-									<label
-										key={model}
+								{!hasKey ? (
+									<div
 										style={{
-											display: 'flex',
-											alignItems: 'center',
-											gap: 8,
-											padding: '6px 8px',
-											borderRadius: 6,
-											cursor: 'pointer',
+											padding: '10px 12px',
 											fontSize: 13,
-											color: 'var(--tl-color-text-1)',
+											opacity: 0.85,
+											maxWidth: 220,
+											lineHeight: 1.4,
 										}}
 									>
-										<input
-											type="checkbox"
-											checked={shape.props.models.includes(model)}
-											onChange={() => toggleModel(model)}
-										/>
-										{model}
-									</label>
-								))}
+										Add your OpenRouter API key in Settings (gear icon) to connect models.
+									</div>
+								) : settings.enabledModels.length === 0 ? (
+									<div
+										style={{
+											padding: '10px 12px',
+											fontSize: 13,
+											opacity: 0.85,
+											maxWidth: 220,
+											lineHeight: 1.4,
+										}}
+									>
+										No models enabled yet. Enable models in Settings.
+									</div>
+								) : (
+									settings.enabledModels.map((model) => (
+										<label
+											key={model}
+											style={{
+												display: 'flex',
+												alignItems: 'center',
+												gap: 8,
+												padding: '6px 8px',
+												borderRadius: 6,
+												cursor: 'pointer',
+												fontSize: 13,
+												color: 'var(--tl-color-text-1)',
+											}}
+										>
+											<input
+												type="checkbox"
+												checked={selectedModels.includes(model)}
+												onChange={() => toggleModel(model)}
+											/>
+											{modelName(model)}
+										</label>
+									))
+								)}
 							</div>
 						)}
 					</div>
@@ -297,7 +352,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 						aria-label="Run prompt"
 						onPointerDown={(e) => e.stopPropagation()}
 						onClick={run}
-						disabled={modelCount === 0}
+						disabled={!hasKey || modelCount === 0}
 						style={{
 							display: 'flex',
 							alignItems: 'center',
@@ -309,8 +364,8 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 							borderRadius: 6,
 							background: 'var(--tl-color-primary)',
 							color: '#fff',
-							cursor: modelCount === 0 ? 'default' : 'pointer',
-							opacity: modelCount === 0 ? 0.5 : 1,
+							cursor: !hasKey || modelCount === 0 ? 'default' : 'pointer',
+							opacity: !hasKey || modelCount === 0 ? 0.5 : 1,
 						}}
 					>
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

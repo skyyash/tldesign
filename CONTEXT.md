@@ -107,6 +107,18 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (439 models grouped by author;
   search filters; badges render; toggling persists across reload).
 
+### 9. Prompt dropdown integration with settings (2026-09-11)
+
+- Prompt dropdown (`src/PromptShape.tsx`) reads `settings.enabledModels` when an
+  API key is set, resolving display names from the catalog. No key -> "Connect"
+  state with an instruction; key but no enabled models -> hint to enable models.
+- Play button disabled until a key exists and at least one model is selected.
+  Fan-out uses display names for artefact headings and arrow labels. Selection
+  (`props.models`) filters to currently enabled models.
+- Verified: `npm run build` and browser test (no key -> Connect + instruction,
+  play disabled; key + enabled -> dropdown lists enabled models, run creates
+  labelled artefacts; key + no enabled -> hint).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
@@ -115,5 +127,6 @@ Build check: `npm run build`
 
 ## Next
 
-- Prompt dropdown integration (reads enabled models; connect instruction when
-  no key).
+- Wire real LLM generation: `chat/completions` client on the play button
+  (deferred earlier), so each selected model actually produces an artefact.
+- Later: design-delete IndexedDB cleanup; profile/auth.
