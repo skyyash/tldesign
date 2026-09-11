@@ -113,8 +113,9 @@ Build check: `npm run build`
   API key is set, resolving display names from the catalog. No key -> "Connect"
   state with an instruction; key but no enabled models -> hint to enable models.
 - Play button disabled until a key exists and at least one model is selected.
-  Fan-out uses display names for artefact headings and arrow labels. Selection
-  (`props.models`) filters to currently enabled models.
+  Fan-out uses display names for artefact headings and arrow labels (arrow
+  label text uses the small size style). Selection (`props.models`) filters to
+  currently enabled models.
 - The model dropdown opens above the shape (outside its bounds), so the shape's
   hover/selection outline never renders on top of it.
 - Verified: `npm run build` and browser test (no key -> Connect + instruction,
