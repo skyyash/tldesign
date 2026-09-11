@@ -96,6 +96,17 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (migration cleans localStorage;
   key survives reload in sessionStorage; clearing the key removes it).
 
+### 8. Settings modal: catalog browser (2026-09-11)
+
+- `src/SettingsModal.tsx`: API key input plus a model catalog browser.
+- Catalog grouped by author, search box, badges for cost ($/M), context length,
+  modality, and `:free`; enable toggles bound to `settings.enabledModels`
+  (persist in localStorage).
+- Models come from `getModelCatalog()` (cache/network/fallback) loaded on open,
+  with a small source indicator.
+- Verified: `npm run build` and browser test (439 models grouped by author;
+  search filters; badges render; toggling persists across reload).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
@@ -104,7 +115,5 @@ Build check: `npm run build`
 
 ## Next
 
-- Settings modal content: catalog browser grouped by author, search,
-  cost/context/modality badges, `:free` flags, enable toggles.
 - Prompt dropdown integration (reads enabled models; connect instruction when
   no key).

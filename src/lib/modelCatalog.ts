@@ -1,5 +1,7 @@
 import { OpenRouterModel, fetchModels } from './openrouter'
 
+export type { OpenRouterModel } from './openrouter'
+
 const CACHE_KEY = 'tldesign.modelCatalog'
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
