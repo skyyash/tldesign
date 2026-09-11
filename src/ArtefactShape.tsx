@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
 	HTMLContainer,
 	Rectangle2d,
@@ -53,6 +53,18 @@ export class ArtefactShapeUtil extends ShapeUtil<ArtefactShape> {
 
 function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 	const [editing, setEditing] = useState(false)
+	const containerRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (!editing) return
+		const onPointerDown = (e: PointerEvent) => {
+			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+				setEditing(false)
+			}
+		}
+		document.addEventListener('pointerdown', onPointerDown, true)
+		return () => document.removeEventListener('pointerdown', onPointerDown, true)
+	}, [editing])
 
 	const copy = () => {
 		navigator.clipboard.writeText(shape.props.code)
@@ -70,11 +82,12 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 				overflow: 'hidden',
 			}}
 		>
-			<div
-				style={{
-					display: 'flex',
-					alignItems: 'center',
-					justifyContent: 'space-between',
+			<div ref={containerRef} style={{ display: 'contents' }}>
+				<div
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
 					gap: 8,
 					padding: '8px 12px',
 					borderBottom: '1px solid var(--tl-color-divider)',
@@ -172,6 +185,7 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 						style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'all' }}
 					/>
 				)}
+			</div>
 			</div>
 		</HTMLContainer>
 	)

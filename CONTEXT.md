@@ -40,9 +40,9 @@ Build check: `npm run build`
 - New `artefact` shape (`src/ArtefactShape.tsx`): fixed navbar with "Artefact"
   title, an edit button and a copy button; interactive HTML preview in an
   iframe (`srcDoc`, `sandbox="allow-scripts"`). The edit button swaps the
-  preview for a monospace textarea (Escape or the button returns to preview);
-  edits update the preview live. Editing is a local state toggle, not tldraw's
-  double-click editing.
+  preview for a monospace textarea (Escape, the edit button, or a click outside
+  the shape returns to preview); edits update the preview live. Editing is a
+  local state toggle, not tldraw's double-click editing.
 - Custom tools (`src/tools.ts`): `prompt` and `artefact` place a shape centered
   on click, then return to select.
 - Both tools added to the main toolbar: custom `Toolbar` component inserts
