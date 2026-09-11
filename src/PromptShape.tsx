@@ -244,7 +244,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					Prompt
 				</span>
 				<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-					<div ref={dropdownRef} style={{ position: 'relative' }}>
+					<div ref={dropdownRef}>
 						<button
 							type="button"
 							aria-label="Select models"
@@ -283,8 +283,8 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 								onPointerDown={(e) => e.stopPropagation()}
 								style={{
 									position: 'absolute',
-									top: 'calc(100% + 4px)',
-									right: 0,
+									bottom: 'calc(100% + 6px)',
+									right: 12,
 									minWidth: 170,
 									padding: 4,
 									background: 'var(--tl-color-panel)',

@@ -115,9 +115,12 @@ Build check: `npm run build`
 - Play button disabled until a key exists and at least one model is selected.
   Fan-out uses display names for artefact headings and arrow labels. Selection
   (`props.models`) filters to currently enabled models.
+- The model dropdown opens above the shape (outside its bounds), so the shape's
+  hover/selection outline never renders on top of it.
 - Verified: `npm run build` and browser test (no key -> Connect + instruction,
   play disabled; key + enabled -> dropdown lists enabled models, run creates
-  labelled artefacts; key + no enabled -> hint).
+  labelled artefacts; key + no enabled -> hint; dropdown opens above the shape
+  and stays clear of its outline).
 
 ## Known issues
 
