@@ -26,10 +26,13 @@ export type PromptShape = TLShape<typeof PROMPT_TYPE>
 
 const OUTPUTS = ['Model A', 'Model B', 'Model C']
 
-const OUTPUT_W = 200
-const OUTPUT_H = 60
-const OUTPUT_GAP = 90
-const OUTPUT_OFFSET_X = 260
+const ARTEFACT_W = 300
+const ARTEFACT_H = 200
+const ARTEFACT_GAP = 240
+const ARTEFACT_OFFSET_X = 300
+
+const artefactCode = (label: string) =>
+	`<style>body{font-family:sans-serif;padding:24px}</style><h1>${label}</h1><p>Model output placeholder.</p>`
 
 export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 	static override type = PROMPT_TYPE
@@ -77,24 +80,23 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 
 		const promptX = bounds.maxX
 		const promptY = bounds.midY
-		const outputX = bounds.maxX + OUTPUT_OFFSET_X
-		const totalH = (OUTPUTS.length - 1) * OUTPUT_GAP
+		const outputX = bounds.maxX + ARTEFACT_OFFSET_X
+		const totalH = (OUTPUTS.length - 1) * ARTEFACT_GAP
 
 		editor.run(() => {
 			OUTPUTS.forEach((label, i) => {
-				const outputMidY = promptY - totalH / 2 + i * OUTPUT_GAP
+				const outputMidY = promptY - totalH / 2 + i * ARTEFACT_GAP
 				const outputId = createShapeId()
 
 				editor.createShape({
 					id: outputId,
-					type: 'geo',
+					type: 'artefact',
 					x: outputX,
-					y: outputMidY - OUTPUT_H / 2,
+					y: outputMidY - ARTEFACT_H / 2,
 					props: {
-						geo: 'rectangle',
-						w: OUTPUT_W,
-						h: OUTPUT_H,
-						richText: toRichText(label),
+						w: ARTEFACT_W,
+						h: ARTEFACT_H,
+						code: artefactCode(label),
 					},
 				})
 

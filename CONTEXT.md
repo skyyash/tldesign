@@ -27,12 +27,12 @@ Build check: `npm run build`
 - Custom `prompt` shape (`src/PromptShape.tsx`) with a fixed navbar: "Prompt"
   title on the left, play SVG button on the right.
 - Prompt text is editable rich text (double-click or select + Enter).
-- Play spawns 3 output rectangles (geo) and arrows bound from the prompt to
-  each, simulating a model fan-out.
+- Play spawns 3 output artefacts (HTML previews, one per model) and arrows
+  bound from the prompt to each, simulating a model fan-out.
 - Re-running is a no-op: guarded on existing arrow bindings involving the
   prompt.
 - Verified: `npm run build` and browser test (edit text in place; play creates
-  3 rects + 3 bound arrows; second click does not duplicate).
+  3 artefacts + 3 bound arrows; second click does not duplicate).
 
 ### 3. HTML artefact shape + custom toolbar tools (2026-09-11)
 
@@ -50,5 +50,5 @@ Build check: `npm run build`
 
 ## Next
 
-- Fan-out should produce artefact shapes (HTML previews) instead of plain
-  rectangles, so each model output becomes an editable artefact.
+- Give each fan-out artefact per-model code that reflects the prompt text,
+  then wire real LLM calls behind the play button.
