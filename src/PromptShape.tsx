@@ -2,18 +2,23 @@ import {
 	createShapeId,
 	HTMLContainer,
 	Rectangle2d,
+	renderPlaintextFromRichText,
+	RichTextLabel,
+	richTextValidator,
 	ShapeUtil,
 	T,
+	TLRichText,
 	TLShape,
 	toRichText,
 	useEditor,
+	useValue,
 } from 'tldraw'
 
 const PROMPT_TYPE = 'prompt'
 
 declare module 'tldraw' {
 	export interface TLGlobalShapePropsMap {
-		[PROMPT_TYPE]: { w: number; h: number; text: string }
+		[PROMPT_TYPE]: { w: number; h: number; richText: TLRichText }
 	}
 }
 
@@ -28,14 +33,22 @@ const OUTPUT_OFFSET_X = 260
 
 export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 	static override type = PROMPT_TYPE
-	static override props = { w: T.number, h: T.number, text: T.string }
+	static override props = { w: T.number, h: T.number, richText: richTextValidator }
+
+	override canEdit() {
+		return true
+	}
 
 	getDefaultProps(): PromptShape['props'] {
-		return { w: 260, h: 140, text: 'Describe what you want to design...' }
+		return { w: 260, h: 140, richText: toRichText('Describe what you want to design...') }
 	}
 
 	getGeometry(shape: PromptShape) {
 		return new Rectangle2d({ width: shape.props.w, height: shape.props.h, isFilled: true })
+	}
+
+	override getText(shape: PromptShape) {
+		return renderPlaintextFromRichText(this.editor, shape.props.richText)
 	}
 
 	component(shape: PromptShape) {
@@ -51,6 +64,11 @@ export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 
 function PromptComponent({ shape }: { shape: PromptShape }) {
 	const editor = useEditor()
+	const isSelected = useValue(
+		'is selected',
+		() => shape.id === editor.getOnlySelectedShapeId(),
+		[editor, shape.id]
+	)
 
 	const run = () => {
 		const bounds = editor.getShapePageBounds(shape)
@@ -126,16 +144,29 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				borderRadius: 10,
 				color: 'var(--tl-color-text-1)',
 				fontSize: 14,
-				lineHeight: 1.35,
 			}}
 		>
-			<div>{shape.props.text}</div>
+			<RichTextLabel
+				shapeId={shape.id}
+				type={shape.type}
+				fontFamily="sans-serif"
+				fontSize={14}
+				lineHeight={1.35}
+				textAlign="start"
+				verticalAlign="start"
+				richText={shape.props.richText}
+				isSelected={isSelected}
+				labelColor="var(--tl-color-text-1)"
+				wrap
+			/>
 			<button
 				type="button"
 				onPointerDown={(e) => e.stopPropagation()}
 				onClick={run}
 				style={{
 					alignSelf: 'flex-start',
+					position: 'relative',
+					zIndex: 4,
 					pointerEvents: 'all',
 					cursor: 'pointer',
 					padding: '6px 14px',
