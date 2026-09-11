@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import {
 	createShapeId,
 	HTMLContainer,
@@ -9,6 +10,7 @@ import {
 	T,
 	TLRichText,
 	TLShape,
+	TLShapeId,
 	toRichText,
 	useEditor,
 	useValue,
@@ -18,32 +20,42 @@ const PROMPT_TYPE = 'prompt'
 
 declare module 'tldraw' {
 	export interface TLGlobalShapePropsMap {
-		[PROMPT_TYPE]: { w: number; h: number; richText: TLRichText }
+		[PROMPT_TYPE]: { w: number; h: number; richText: TLRichText; models: string[] }
 	}
 }
 
 export type PromptShape = TLShape<typeof PROMPT_TYPE>
 
-const OUTPUTS = ['Model A', 'Model B', 'Model C']
+const MODELS = ['GPT-4o', 'Claude Sonnet', 'Gemini 1.5 Pro', 'Llama 3.1']
 
 const ARTEFACT_W = 300
 const ARTEFACT_H = 200
 const ARTEFACT_GAP = 240
 const ARTEFACT_OFFSET_X = 300
 
-const artefactCode = (label: string) =>
-	`<style>body{font-family:sans-serif;padding:24px}</style><h1>${label}</h1><p>Model output placeholder.</p>`
+const artefactCode = (model: string) =>
+	`<style>body{font-family:sans-serif;padding:24px}</style><h1>${model}</h1><p>Model output placeholder.</p>`
 
 export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 	static override type = PROMPT_TYPE
-	static override props = { w: T.number, h: T.number, richText: richTextValidator }
+	static override props = {
+		w: T.number,
+		h: T.number,
+		richText: richTextValidator,
+		models: T.arrayOf(T.string),
+	}
 
 	override canEdit() {
 		return true
 	}
 
 	getDefaultProps(): PromptShape['props'] {
-		return { w: 260, h: 140, richText: toRichText('Describe what you want to design...') }
+		return {
+			w: 260,
+			h: 140,
+			richText: toRichText('Describe what you want to design...'),
+			models: MODELS.slice(0, 3),
+		}
 	}
 
 	getGeometry(shape: PromptShape) {
@@ -73,20 +85,49 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		[editor, shape.id]
 	)
 
+	const [open, setOpen] = useState(false)
+	const dropdownRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (!open) return
+		const onPointerDown = (e: PointerEvent) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false)
+		}
+		document.addEventListener('pointerdown', onPointerDown, true)
+		return () => document.removeEventListener('pointerdown', onPointerDown, true)
+	}, [open])
+
+	const toggleModel = (model: string) => {
+		const has = shape.props.models.includes(model)
+		const models = has
+			? shape.props.models.filter((m) => m !== model)
+			: [...shape.props.models, model]
+		editor.updateShape({ id: shape.id, type: shape.type, props: { models } })
+	}
+
 	const run = () => {
 		const bounds = editor.getShapePageBounds(shape)
 		if (!bounds) return
-		if (editor.getBindingsInvolvingShape(shape.id, 'arrow').length > 0) return
+		const models = shape.props.models
+		if (models.length === 0) return
 
 		const promptX = bounds.maxX
 		const promptY = bounds.midY
 		const outputX = bounds.maxX + ARTEFACT_OFFSET_X
-		const totalH = (OUTPUTS.length - 1) * ARTEFACT_GAP
+		const totalH = (models.length - 1) * ARTEFACT_GAP
 
 		editor.run(() => {
-			OUTPUTS.forEach((label, i) => {
+			const spawnedIds = (shape.meta as { spawnedIds?: TLShapeId[] }).spawnedIds
+			if (spawnedIds && spawnedIds.length > 0) {
+				editor.deleteShapes(spawnedIds)
+			}
+
+			const nextSpawnedIds: TLShapeId[] = []
+
+			models.forEach((model, i) => {
 				const outputMidY = promptY - totalH / 2 + i * ARTEFACT_GAP
 				const outputId = createShapeId()
+				const arrowId = createShapeId()
 
 				editor.createShape({
 					id: outputId,
@@ -96,11 +137,10 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					props: {
 						w: ARTEFACT_W,
 						h: ARTEFACT_H,
-						code: artefactCode(label),
+						code: artefactCode(model),
 					},
 				})
 
-				const arrowId = createShapeId()
 				editor.createShape({
 					id: arrowId,
 					type: 'arrow',
@@ -129,9 +169,15 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					toId: outputId,
 					props: { ...bindingProps, terminal: 'end' },
 				})
+
+				nextSpawnedIds.push(outputId, arrowId)
 			})
+
+			editor.updateShape({ id: shape.id, type: shape.type, meta: { spawnedIds: nextSpawnedIds } })
 		})
 	}
+
+	const modelCount = shape.props.models.length
 
 	return (
 		<HTMLContainer
@@ -142,7 +188,6 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				background: 'var(--tl-color-panel)',
 				border: '2px solid var(--tl-color-text-1)',
 				borderRadius: 10,
-				overflow: 'hidden',
 				color: 'var(--tl-color-text-1)',
 				fontSize: 14,
 			}}
@@ -168,29 +213,110 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				>
 					Prompt
 				</span>
-				<button
-					type="button"
-					aria-label="Run prompt"
-					onPointerDown={(e) => e.stopPropagation()}
-					onClick={run}
-					style={{
-						display: 'flex',
-						alignItems: 'center',
-						justifyContent: 'center',
-						width: 26,
-						height: 26,
-						padding: 0,
-						border: 'none',
-						borderRadius: 6,
-						background: 'var(--tl-color-primary)',
-						color: '#fff',
-						cursor: 'pointer',
-					}}
-				>
-					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<path d="M8 5v14l11-7z" />
-					</svg>
-				</button>
+				<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+					<div ref={dropdownRef} style={{ position: 'relative' }}>
+						<button
+							type="button"
+							aria-label="Select models"
+							onPointerDown={(e) => e.stopPropagation()}
+							onClick={() => setOpen(!open)}
+							style={{
+								display: 'flex',
+								alignItems: 'center',
+								gap: 4,
+								padding: '4px 8px',
+								border: '1px solid var(--tl-color-divider)',
+								borderRadius: 6,
+								background: 'transparent',
+								color: 'var(--tl-color-text-1)',
+								fontSize: 12,
+								cursor: 'pointer',
+							}}
+						>
+							<span>{modelCount > 0 ? `${modelCount} model${modelCount > 1 ? 's' : ''}` : 'Models'}</span>
+							<svg
+								width="10"
+								height="10"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2.5"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden="true"
+							>
+								<path d="M6 9l6 6 6-6" />
+							</svg>
+						</button>
+						{open && (
+							<div
+								onPointerDown={(e) => e.stopPropagation()}
+								style={{
+									position: 'absolute',
+									top: 'calc(100% + 4px)',
+									right: 0,
+									minWidth: 170,
+									padding: 4,
+									background: 'var(--tl-color-panel)',
+									border: '1px solid var(--tl-color-divider)',
+									borderRadius: 8,
+									boxShadow: '0 4px 16px rgba(0, 0, 0, 0.15)',
+									zIndex: 100,
+									pointerEvents: 'all',
+									userSelect: 'none',
+								}}
+							>
+								{MODELS.map((model) => (
+									<label
+										key={model}
+										style={{
+											display: 'flex',
+											alignItems: 'center',
+											gap: 8,
+											padding: '6px 8px',
+											borderRadius: 6,
+											cursor: 'pointer',
+											fontSize: 13,
+											color: 'var(--tl-color-text-1)',
+										}}
+									>
+										<input
+											type="checkbox"
+											checked={shape.props.models.includes(model)}
+											onChange={() => toggleModel(model)}
+										/>
+										{model}
+									</label>
+								))}
+							</div>
+						)}
+					</div>
+					<button
+						type="button"
+						aria-label="Run prompt"
+						onPointerDown={(e) => e.stopPropagation()}
+						onClick={run}
+						disabled={modelCount === 0}
+						style={{
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							width: 26,
+							height: 26,
+							padding: 0,
+							border: 'none',
+							borderRadius: 6,
+							background: 'var(--tl-color-primary)',
+							color: '#fff',
+							cursor: modelCount === 0 ? 'default' : 'pointer',
+							opacity: modelCount === 0 ? 0.5 : 1,
+						}}
+					>
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+							<path d="M8 5v14l11-7z" />
+						</svg>
+					</button>
+				</div>
 			</div>
 			<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
 				<RichTextLabel

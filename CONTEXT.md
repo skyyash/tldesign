@@ -25,14 +25,14 @@ Build check: `npm run build`
 ### 2. Prompt shape with run button (2026-09-11)
 
 - Custom `prompt` shape (`src/PromptShape.tsx`) with a fixed navbar: "Prompt"
-  title on the left, play SVG button on the right.
+  title, a multi-select model dropdown, and a play SVG button on the right.
 - Prompt text is editable rich text (double-click or select + Enter).
-- Play spawns 3 output artefacts (HTML previews, one per model) and arrows
-  bound from the prompt to each, simulating a model fan-out.
-- Re-running is a no-op: guarded on existing arrow bindings involving the
-  prompt.
-- Verified: `npm run build` and browser test (edit text in place; play creates
-  3 artefacts + 3 bound arrows; second click does not duplicate).
+- Play spawns one output artefact (HTML preview) per selected model, with
+  arrows bound from the prompt to each, simulating a model fan-out. Re-running
+  replaces the previous outputs (tracked via shape meta).
+- Verified: `npm run build` and browser test (edit text in place; select models
+  in the dropdown; play creates matching artefacts + bound arrows; re-run
+  replaces them).
 
 ### 3. HTML artefact shape + custom toolbar tools (2026-09-11)
 
