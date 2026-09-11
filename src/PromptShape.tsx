@@ -31,8 +31,7 @@ export type PromptShape = TLShape<typeof PROMPT_TYPE>
 
 const ARTEFACT_W = 300
 const ARTEFACT_H = 200
-const ARTEFACT_GAP = 240
-const ARTEFACT_OFFSET_X = 300
+const ARTEFACT_RADIUS = 420
 
 const SYSTEM_PROMPT =
 	'You are a design assistant. Respond with ONLY a single, self-contained HTML ' +
@@ -171,10 +170,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		]
 
 		const runId = ++runIdRef.current
-		const promptX = bounds.maxX
-		const promptY = bounds.midY
-		const outputX = bounds.maxX + ARTEFACT_OFFSET_X
-		const totalH = (models.length - 1) * ARTEFACT_GAP
+		const promptCenter = { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 }
 
 		const outputs: { model: string; outputId: TLShapeId }[] = []
 
@@ -187,14 +183,16 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 			const nextSpawnedIds: TLShapeId[] = []
 
 			models.forEach((model, i) => {
-				const outputMidY = promptY - totalH / 2 + i * ARTEFACT_GAP
+				const angle = -Math.PI / 2 + (2 * Math.PI * i) / models.length
+				const outputMidX = promptCenter.x + ARTEFACT_RADIUS * Math.cos(angle)
+				const outputMidY = promptCenter.y + ARTEFACT_RADIUS * Math.sin(angle)
 				const outputId = createShapeId()
 				const arrowId = createShapeId()
 
 				editor.createShape({
 					id: outputId,
 					type: 'artefact',
-					x: outputX,
+					x: outputMidX - ARTEFACT_W / 2,
 					y: outputMidY - ARTEFACT_H / 2,
 					props: {
 						w: ARTEFACT_W,
@@ -207,8 +205,8 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					id: arrowId,
 					type: 'arrow',
 					props: {
-						start: { x: promptX, y: promptY },
-						end: { x: outputX, y: outputMidY },
+						start: { x: promptCenter.x, y: promptCenter.y },
+						end: { x: outputMidX, y: outputMidY },
 						size: 's',
 						richText: toRichText(modelName(model)),
 					},

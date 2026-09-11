@@ -138,10 +138,12 @@ Build check: `npm run build`
 ### 11. Wire play to real generation (2026-09-11)
 
 - PromptShape `run` builds messages (a system prompt asking for self-contained
-  HTML plus the prompt text), creates one artefact per selected model seeded
-  with a "Generating..." placeholder, and calls `chatCompletion` per model.
-  Each artefact fills with the model's HTML (markdown code fences stripped) or
-  an error state.
+  HTML plus the prompt text), creates one artefact per selected model arranged
+  in a circle around the prompt (evenly spaced angles, radius 420) seeded with
+  a "Generating..." placeholder, and calls `chatCompletion` per model. Arrows
+  radiate from the prompt to each artefact so they do not cross. Each artefact
+  fills with the model's HTML (markdown code fences stripped) or an error
+  state.
 - A run id guards stale completions; run re-reads the latest shape from the
   store so re-running replaces prior outputs (fixed a stale-closure bug found
   while testing).
