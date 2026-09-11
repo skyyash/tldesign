@@ -64,6 +64,18 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (create/open/rename/delete; canvas
   persists across reopen and full reload; navbar + settings modal).
 
+### 5. OpenRouter client + model catalog (2026-09-11)
+
+- New `src/lib/openrouter.ts`: base URL, `OpenRouterModel` type, `fetchModels()`
+  with `HTTP-Referer` (window origin) and `X-Title: tldesign` headers.
+- New `src/lib/modelCatalog.ts`: `getModelCatalog()` with a 24h localStorage
+  cache (fresh -> cache; else fetch -> network + cache write; stale cache if
+  the network fails; else static `FALLBACK_MODELS`). Helpers: `authorOf`,
+  `isFreeModel`, `promptPricePerMillion`, `formatContextLength`, `displayName`.
+- Verified: `npm run build` and browser probes (network fetch returned 439
+  models; second call served from cache; offline -> static fallback list; stale
+  cache served offline; headers captured on the request).
+
 ## Known issues
 
 - OpenRouter API key will be stored in plaintext in localStorage (accepted for
@@ -76,9 +88,9 @@ Build check: `npm run build`
 
 ## Next
 
-- OpenRouter client + model catalog (fetch /models, 24h localStorage cache,
-  static fallback, grouped by author). Include `HTTP-Referer` (window origin)
-  and `X-Title: tldesign` headers. Defer the `chat/completions` client until
-  the real-generation increment.
-- Then settings store (plaintext key, TODO above), secure key storage, settings
-  modal content (API key + catalog browser), and prompt dropdown integration.
+- Settings store (apiKey, enabledModels ids) in localStorage, plaintext key
+  (TODO above). Then secure key storage.
+- Settings modal content: API key input + catalog browser grouped by author,
+  search, cost/context/modality badges, `:free` flags, enable toggles.
+- Prompt dropdown integration (reads enabled models; connect instruction when
+  no key).
