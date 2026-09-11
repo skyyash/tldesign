@@ -76,6 +76,16 @@ Build check: `npm run build`
   models; second call served from cache; offline -> static fallback list; stale
   cache served offline; headers captured on the request).
 
+### 6. Settings store + API key input (2026-09-11)
+
+- New `src/lib/settings.tsx`: `SettingsProvider` + `useSettings()`, persisted to
+  localStorage (`tldesign.settings`) as `{apiKey, enabledModels}` with
+  `setApiKey`, `toggleModel`, `setEnabledModels`. Plaintext key (TODO below).
+- App wrapped in `SettingsProvider` so the navbar and the canvas share the store.
+- `src/SettingsModal.tsx`: API key input wired to the store.
+- Verified: `npm run build` and browser test (enter key, close/reopen, full
+  reload -> persists; localStorage inspected).
+
 ## Known issues
 
 - OpenRouter API key will be stored in plaintext in localStorage (accepted for
@@ -88,9 +98,9 @@ Build check: `npm run build`
 
 ## Next
 
-- Settings store (apiKey, enabledModels ids) in localStorage, plaintext key
-  (TODO above). Then secure key storage.
-- Settings modal content: API key input + catalog browser grouped by author,
-  search, cost/context/modality badges, `:free` flags, enable toggles.
+- Secure API key storage (plaintext key TODO above). Decision needed:
+  session-only vs passphrase-encrypted localStorage.
+- Settings modal content: catalog browser grouped by author, search,
+  cost/context/modality badges, `:free` flags, enable toggles.
 - Prompt dropdown integration (reads enabled models; connect instruction when
   no key).

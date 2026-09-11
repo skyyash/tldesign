@@ -40,6 +40,7 @@ import { DesignsHome } from './DesignsHome'
 import { PromptShapeUtil } from './PromptShape'
 import { SettingsModal } from './SettingsModal'
 import { createDesign, deleteDesign, listDesigns, renameDesign, touchDesign } from './lib/designs'
+import { SettingsProvider } from './lib/settings'
 import { ArtefactTool, PromptTool } from './tools'
 
 const shapeUtils = [PromptShapeUtil, ArtefactShapeUtil]
@@ -144,44 +145,46 @@ function App() {
 	}
 
 	return (
-		<div
-			className="tl-theme__light"
-			style={{
-				position: 'fixed',
-				inset: 0,
-				background: 'var(--tl-color-background)',
-				color: 'var(--tl-color-text-1)',
-			}}
-		>
-			{activeDesign ? (
-				<div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
-					<AppNavbar
-						name={activeDesign.name}
-						onBack={handleBack}
-						onOpenSettings={() => setSettingsOpen(true)}
-					/>
-					<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
-						<Tldraw
-							key={activeDesign.id}
-							persistenceKey={activeDesign.id}
-							shapeUtils={shapeUtils}
-							tools={tools}
-							components={components}
-							overrides={overrides}
+		<SettingsProvider>
+			<div
+				className="tl-theme__light"
+				style={{
+					position: 'fixed',
+					inset: 0,
+					background: 'var(--tl-color-background)',
+					color: 'var(--tl-color-text-1)',
+				}}
+			>
+				{activeDesign ? (
+					<div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+						<AppNavbar
+							name={activeDesign.name}
+							onBack={handleBack}
+							onOpenSettings={() => setSettingsOpen(true)}
 						/>
+						<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+							<Tldraw
+								key={activeDesign.id}
+								persistenceKey={activeDesign.id}
+								shapeUtils={shapeUtils}
+								tools={tools}
+								components={components}
+								overrides={overrides}
+							/>
+						</div>
 					</div>
-				</div>
-			) : (
-				<DesignsHome
-					designs={designs}
-					onOpen={handleOpen}
-					onNew={handleNew}
-					onRename={handleRename}
-					onDelete={handleDelete}
-				/>
-			)}
-			{settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
-		</div>
+				) : (
+					<DesignsHome
+						designs={designs}
+						onOpen={handleOpen}
+						onNew={handleNew}
+						onRename={handleRename}
+						onDelete={handleDelete}
+					/>
+				)}
+				{settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+			</div>
+		</SettingsProvider>
 	)
 }
 

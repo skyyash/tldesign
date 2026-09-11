@@ -1,4 +1,8 @@
+import { useSettings } from './lib/settings'
+
 export function SettingsModal({ onClose }: { onClose: () => void }) {
+	const { settings, setApiKey } = useSettings()
+
 	return (
 		<div
 			onClick={onClose}
@@ -51,7 +55,33 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 						×
 					</button>
 				</div>
-				<div style={{ padding: 16 }}>OpenRouter settings will live here.</div>
+				<div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+						<label style={{ fontWeight: 600, fontSize: 13 }}>OpenRouter API key</label>
+						<input
+							type="password"
+							value={settings.apiKey}
+							placeholder="sk-or-v1-..."
+							spellCheck={false}
+							autoComplete="off"
+							onChange={(e) => setApiKey(e.target.value)}
+							style={{
+								width: '100%',
+								boxSizing: 'border-box',
+								padding: '8px 10px',
+								border: '1px solid var(--tl-color-divider)',
+								borderRadius: 8,
+								background: 'var(--tl-color-panel-contrast)',
+								color: 'inherit',
+								fontFamily: 'monospace',
+								fontSize: 13,
+							}}
+						/>
+						<p style={{ margin: 0, fontSize: 12, opacity: 0.6 }}>
+							Stored locally in your browser. Model catalog and enable toggles arrive next.
+						</p>
+					</div>
+				</div>
 			</div>
 		</div>
 	)
