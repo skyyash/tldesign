@@ -136,49 +136,76 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 			style={{
 				display: 'flex',
 				flexDirection: 'column',
-				justifyContent: 'space-between',
 				boxSizing: 'border-box',
-				padding: 14,
 				background: 'var(--tl-color-panel)',
 				border: '2px solid var(--tl-color-text-1)',
 				borderRadius: 10,
+				overflow: 'hidden',
 				color: 'var(--tl-color-text-1)',
 				fontSize: 14,
 			}}
 		>
-			<RichTextLabel
-				shapeId={shape.id}
-				type={shape.type}
-				fontFamily="sans-serif"
-				fontSize={14}
-				lineHeight={1.35}
-				textAlign="start"
-				verticalAlign="start"
-				richText={shape.props.richText}
-				isSelected={isSelected}
-				labelColor="var(--tl-color-text-1)"
-				wrap
-			/>
-			<button
-				type="button"
-				onPointerDown={(e) => e.stopPropagation()}
-				onClick={run}
+			<div
 				style={{
-					alignSelf: 'flex-start',
-					position: 'relative',
-					zIndex: 4,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'space-between',
+					gap: 8,
+					padding: '8px 12px',
+					borderBottom: '1px solid var(--tl-color-divider)',
 					pointerEvents: 'all',
-					cursor: 'pointer',
-					padding: '6px 14px',
-					border: 'none',
-					borderRadius: 6,
-					background: 'var(--tl-color-primary)',
-					color: '#fff',
-					fontWeight: 600,
 				}}
 			>
-				Run
-			</button>
+				<span
+					style={{
+						fontWeight: 600,
+						fontSize: 13,
+						letterSpacing: '0.05em',
+						textTransform: 'uppercase',
+					}}
+				>
+					Prompt
+				</span>
+				<button
+					type="button"
+					aria-label="Run prompt"
+					onPointerDown={(e) => e.stopPropagation()}
+					onClick={run}
+					style={{
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'center',
+						width: 26,
+						height: 26,
+						padding: 0,
+						border: 'none',
+						borderRadius: 6,
+						background: 'var(--tl-color-primary)',
+						color: '#fff',
+						cursor: 'pointer',
+					}}
+				>
+					<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+						<path d="M8 5v14l11-7z" />
+					</svg>
+				</button>
+			</div>
+			<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+				<RichTextLabel
+					shapeId={shape.id}
+					type={shape.type}
+					fontFamily="sans-serif"
+					fontSize={14}
+					lineHeight={1.35}
+					textAlign="start"
+					verticalAlign="start"
+					richText={shape.props.richText}
+					isSelected={isSelected}
+					labelColor="var(--tl-color-text-1)"
+					wrap
+					padding={12}
+				/>
+			</div>
 		</HTMLContainer>
 	)
 }

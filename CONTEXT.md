@@ -24,13 +24,14 @@ Build check: `npm run build`
 
 ### 2. Prompt shape with run button (2026-09-11)
 
-- Custom `prompt` shape (`src/PromptShape.tsx`) with a Run button.
+- Custom `prompt` shape (`src/PromptShape.tsx`) with a fixed navbar: "Prompt"
+  title on the left, play SVG button on the right.
 - Prompt text is editable rich text (double-click or select + Enter).
-- Run spawns 3 output rectangles (geo) and arrows bound from the prompt to
+- Play spawns 3 output rectangles (geo) and arrows bound from the prompt to
   each, simulating a model fan-out.
 - Re-running is a no-op: guarded on existing arrow bindings involving the
   prompt.
-- Verified: `npm run build` and browser test (edit text in place; Run creates
+- Verified: `npm run build` and browser test (edit text in place; play creates
   3 rects + 3 bound arrows; second click does not duplicate).
 
 ## Next
