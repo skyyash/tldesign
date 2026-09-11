@@ -34,7 +34,20 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (edit text in place; play creates
   3 rects + 3 bound arrows; second click does not duplicate).
 
+### 3. HTML artefact shape + custom toolbar tools (2026-09-11)
+
+- New `artefact` shape (`src/ArtefactShape.tsx`): HTML preview in an iframe
+  (`srcDoc`, `sandbox="allow-scripts"`). Double-click (or select + Enter) to
+  edit the code in a monospace textarea; edits update the preview live.
+- Custom tools (`src/tools.ts`): `prompt` and `artefact` place a shape centered
+  on click, then return to select.
+- Both tools added to the main toolbar: custom `Toolbar` component inserts
+  them near the front; tool entries wired via `TLUiOverrides.tools` with
+  built-in icons (`comment`, `code`).
+- Verified: `npm run build` and browser test (place artefact via toolbar tool,
+  edit code, preview updates; prompt tool places prompts; toolbar shows both).
+
 ## Next
 
-- Editable prompt text, custom tool to add prompt shapes.
-- Replace output rectangles with a custom artefact shape for HTML previews.
+- Fan-out should produce artefact shapes (HTML previews) instead of plain
+  rectangles, so each model output becomes an editable artefact.
