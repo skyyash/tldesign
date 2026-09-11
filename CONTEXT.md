@@ -86,20 +86,24 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (enter key, close/reopen, full
   reload -> persists; localStorage inspected).
 
+### 7. Secure API key storage: session-only (2026-09-11)
+
+- API key moved from localStorage to `sessionStorage` (`tldesign.apiKey`):
+  survives reloads within the tab, cleared when the tab closes. `enabledModels`
+  stays in localStorage (not a secret).
+- Legacy localStorage `apiKey` migrated into the session once, then cleared
+  from localStorage.
+- Verified: `npm run build` and browser test (migration cleans localStorage;
+  key survives reload in sessionStorage; clearing the key removes it).
+
 ## Known issues
 
-- OpenRouter API key will be stored in plaintext in localStorage (accepted for
-  now). MUST move to secure storage in the immediate next increment after the
-  settings store lands. Candidate approaches: session-only (in-memory /
-  sessionStorage) or passphrase-encrypted localStorage via WebCrypto.
 - Deleting a design removes it from the registry but leaves its IndexedDB
   document orphaned (cleanup TODO).
 - Navbar profile button is a non-functional placeholder (no auth yet).
 
 ## Next
 
-- Secure API key storage (plaintext key TODO above). Decision needed:
-  session-only vs passphrase-encrypted localStorage.
 - Settings modal content: catalog browser grouped by author, search,
   cost/context/modality badges, `:free` flags, enable toggles.
 - Prompt dropdown integration (reads enabled models; connect instruction when

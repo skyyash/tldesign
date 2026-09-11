@@ -1,31 +1,49 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
 const STORAGE_KEY = 'tldesign.settings'
+const SESSION_KEY = 'tldesign.apiKey'
 
 export type Settings = {
 	apiKey: string
 	enabledModels: string[]
 }
 
-const DEFAULT_SETTINGS: Settings = {
-	apiKey: '',
-	enabledModels: [],
-}
-
 function loadSettings(): Settings {
+	let enabledModels: string[] = []
+	let legacyApiKey = ''
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY)
-		if (!raw) return DEFAULT_SETTINGS
-		const parsed = JSON.parse(raw) as Partial<Settings>
-		return {
-			apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : '',
-			enabledModels: Array.isArray(parsed.enabledModels)
-				? parsed.enabledModels.filter((id): id is string => typeof id === 'string')
-				: [],
+		if (raw) {
+			const parsed = JSON.parse(raw) as Partial<Settings>
+			if (Array.isArray(parsed.enabledModels)) {
+				enabledModels = parsed.enabledModels.filter((id): id is string => typeof id === 'string')
+			}
+			if (typeof parsed.apiKey === 'string') legacyApiKey = parsed.apiKey
 		}
 	} catch {
-		return DEFAULT_SETTINGS
+		// ignore storage errors
 	}
+
+	let apiKey = ''
+	try {
+		apiKey = sessionStorage.getItem(SESSION_KEY) ?? ''
+	} catch {
+		// ignore storage errors
+	}
+
+	// The API key is session-only. Migrate a legacy localStorage key into the
+	// session once, then clear it from localStorage.
+	if (!apiKey && legacyApiKey) {
+		apiKey = legacyApiKey
+		try {
+			sessionStorage.setItem(SESSION_KEY, apiKey)
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({ enabledModels }))
+		} catch {
+			// ignore storage errors
+		}
+	}
+
+	return { apiKey, enabledModels }
 }
 
 interface SettingsContextValue {
@@ -42,9 +60,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
 	const update = (next: Settings) => {
 		setSettings(next)
-		// TODO: apiKey is stored in plaintext for now; move to secure storage in
-		// the next increment (see CONTEXT.md "Known issues").
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+		try {
+			// apiKey lives only in sessionStorage: cleared when the tab closes.
+			if (next.apiKey) sessionStorage.setItem(SESSION_KEY, next.apiKey)
+			else sessionStorage.removeItem(SESSION_KEY)
+			localStorage.setItem(STORAGE_KEY, JSON.stringify({ enabledModels: next.enabledModels }))
+		} catch {
+			// ignore storage errors
+		}
 	}
 
 	const setApiKey = (apiKey: string) => update({ ...settings, apiKey })

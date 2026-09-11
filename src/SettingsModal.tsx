@@ -78,7 +78,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 							}}
 						/>
 						<p style={{ margin: 0, fontSize: 12, opacity: 0.6 }}>
-							Stored locally in your browser. Model catalog and enable toggles arrive next.
+							Stored only for this browser session; cleared when you close the tab. Model catalog
+							and enable toggles arrive next.
 						</p>
 					</div>
 				</div>
