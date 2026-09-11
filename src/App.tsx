@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import {
 	ArrowDownToolbarItem,
 	ArrowLeftToolbarItem,
@@ -33,8 +34,12 @@ import {
 	TriangleToolbarItem,
 	XBoxToolbarItem,
 } from 'tldraw'
+import { AppNavbar } from './AppNavbar'
 import { ArtefactShapeUtil } from './ArtefactShape'
+import { DesignsHome } from './DesignsHome'
 import { PromptShapeUtil } from './PromptShape'
+import { SettingsModal } from './SettingsModal'
+import { createDesign, deleteDesign, listDesigns, renameDesign, touchDesign } from './lib/designs'
 import { ArtefactTool, PromptTool } from './tools'
 
 const shapeUtils = [PromptShapeUtil, ArtefactShapeUtil]
@@ -100,18 +105,82 @@ const overrides: TLUiOverrides = {
 }
 
 function App() {
+	const [designs, setDesigns] = useState(() => listDesigns())
+	const [activeDesignId, setActiveDesignId] = useState<string | null>(null)
+	const [settingsOpen, setSettingsOpen] = useState(false)
+
+	const activeDesign = useMemo(
+		() => designs.find((design) => design.id === activeDesignId),
+		[designs, activeDesignId]
+	)
+
+	const refreshDesigns = () => setDesigns(listDesigns())
+
+	const handleNew = () => {
+		const design = createDesign('Untitled design')
+		refreshDesigns()
+		setActiveDesignId(design.id)
+	}
+
+	const handleOpen = (id: string) => {
+		setActiveDesignId(id)
+	}
+
+	const handleBack = () => {
+		if (activeDesignId) touchDesign(activeDesignId)
+		refreshDesigns()
+		setActiveDesignId(null)
+	}
+
+	const handleRename = (id: string, name: string) => {
+		renameDesign(id, name)
+		refreshDesigns()
+	}
+
+	const handleDelete = (id: string) => {
+		if (!window.confirm('Delete this design?')) return
+		deleteDesign(id)
+		refreshDesigns()
+	}
+
 	return (
-		<div style={{ position: 'fixed', inset: 0 }}>
-			<Tldraw
-				shapeUtils={shapeUtils}
-				tools={tools}
-				components={components}
-				overrides={overrides}
-				onMount={(editor) => {
-					if (editor.getCurrentPageShapes().some((shape) => shape.type === 'prompt')) return
-					editor.createShape({ type: 'prompt', x: 120, y: 240 })
-				}}
-			/>
+		<div
+			className="tl-theme__light"
+			style={{
+				position: 'fixed',
+				inset: 0,
+				background: 'var(--tl-color-background)',
+				color: 'var(--tl-color-text-1)',
+			}}
+		>
+			{activeDesign ? (
+				<div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+					<AppNavbar
+						name={activeDesign.name}
+						onBack={handleBack}
+						onOpenSettings={() => setSettingsOpen(true)}
+					/>
+					<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+						<Tldraw
+							key={activeDesign.id}
+							persistenceKey={activeDesign.id}
+							shapeUtils={shapeUtils}
+							tools={tools}
+							components={components}
+							overrides={overrides}
+						/>
+					</div>
+				</div>
+			) : (
+				<DesignsHome
+					designs={designs}
+					onOpen={handleOpen}
+					onNew={handleNew}
+					onRename={handleRename}
+					onDelete={handleDelete}
+				/>
+			)}
+			{settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
 		</div>
 	)
 }

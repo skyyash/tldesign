@@ -49,7 +49,36 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser test (place artefact via toolbar tool,
   edit code, preview updates; prompt tool places prompts; toolbar shows both).
 
+### 4. App shell: Designs home + sticky navbar (2026-09-11)
+
+- New `src/lib/designs.ts`: localStorage design registry (`{id, name, updatedAt}`)
+  with create/list/rename/touch/delete.
+- New `src/DesignsHome.tsx`: designs list with new/open, inline rename, delete
+  (with confirm).
+- New `src/AppNavbar.tsx`: sticky top bar, back "Designs" button, design name,
+  profile placeholder + settings buttons.
+- New `src/SettingsModal.tsx`: stub dialog (OpenRouter settings land later).
+- `src/App.tsx`: home/editor routing; each design persists via tldraw
+  `persistenceKey={id}` (IndexedDB).
+- Removed the on-mount prompt auto-create; the Prompt tool places prompts now.
+- Verified: `npm run build` and browser test (create/open/rename/delete; canvas
+  persists across reopen and full reload; navbar + settings modal).
+
+## Known issues
+
+- OpenRouter API key will be stored in plaintext in localStorage (accepted for
+  now). MUST move to secure storage in the immediate next increment after the
+  settings store lands. Candidate approaches: session-only (in-memory /
+  sessionStorage) or passphrase-encrypted localStorage via WebCrypto.
+- Deleting a design removes it from the registry but leaves its IndexedDB
+  document orphaned (cleanup TODO).
+- Navbar profile button is a non-functional placeholder (no auth yet).
+
 ## Next
 
-- Give each fan-out artefact per-model code that reflects the prompt text,
-  then wire real LLM calls behind the play button.
+- OpenRouter client + model catalog (fetch /models, 24h localStorage cache,
+  static fallback, grouped by author). Include `HTTP-Referer` (window origin)
+  and `X-Title: tldesign` headers. Defer the `chat/completions` client until
+  the real-generation increment.
+- Then settings store (plaintext key, TODO above), secure key storage, settings
+  modal content (API key + catalog browser), and prompt dropdown integration.
