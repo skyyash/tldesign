@@ -133,6 +133,20 @@ Build check: `npm run build`
   correct method/headers/body; mock response parsed; real invalid key -> throws
   401). A real success path needs a valid key.
 
+### 11. Wire play to real generation (2026-09-11)
+
+- PromptShape `run` builds messages (a system prompt asking for self-contained
+  HTML plus the prompt text), creates one artefact per selected model seeded
+  with a "Generating..." placeholder, and calls `chatCompletion` per model.
+  Each artefact fills with the model's HTML (markdown code fences stripped) or
+  an error state.
+- A run id guards stale completions; run re-reads the latest shape from the
+  store so re-running replaces prior outputs (fixed a stale-closure bug found
+  while testing).
+- Verified: `npm run build` and browser test with a mocked
+  `/chat/completions` (request body correct; artefact filled with output; error
+  state renders; rapid re-run keeps only the latest result).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
@@ -141,7 +155,5 @@ Build check: `npm run build`
 
 ## Next
 
-- Wire the prompt play button to `chatCompletion`: one artefact per selected
-  model seeded with a "Generating..." placeholder, filled with the model's HTML
-  response; error state per artefact; a run id guards stale completions on
-  re-run. Streaming later.
+- Streaming responses into artefacts (currently fill on completion).
+- Design-delete IndexedDB cleanup; profile/auth.

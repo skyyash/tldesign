@@ -16,6 +16,7 @@ import {
 	useValue,
 } from 'tldraw'
 import { OpenRouterModel, displayName, getModelCatalog } from './lib/modelCatalog'
+import { ChatMessage, chatCompletion } from './lib/openrouter'
 import { useSettings } from './lib/settings'
 
 const PROMPT_TYPE = 'prompt'
@@ -33,8 +34,31 @@ const ARTEFACT_H = 200
 const ARTEFACT_GAP = 240
 const ARTEFACT_OFFSET_X = 300
 
-const artefactCode = (model: string) =>
-	`<style>body{font-family:sans-serif;padding:24px}</style><h1>${model}</h1><p>Model output placeholder.</p>`
+const SYSTEM_PROMPT =
+	'You are a design assistant. Respond with ONLY a single, self-contained HTML ' +
+	'document that implements the described design. Do not wrap it in markdown code ' +
+	'fences and do not add explanations.'
+
+const GENERATING_CODE = `<style>
+  body { font-family: sans-serif; display: flex; align-items: center;
+         justify-content: center; height: 100vh; margin: 0; color: #888; }
+</style>
+<div>Generating...</div>`
+
+const escapeHtml = (value: string) =>
+	value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+const errorCode = (message: string) => `<style>
+  body { font-family: sans-serif; display: flex; align-items: center;
+         justify-content: center; height: 100vh; margin: 0; padding: 24px;
+         color: #b00020; text-align: center; }
+</style>
+<div>Error: ${escapeHtml(message)}</div>`
+
+const stripCodeFences = (html: string) => {
+	const match = html.match(/^\s*```(?:html)?\s*([\s\S]*?)\s*```\s*$/)
+	return match ? match[1] : html
+}
 
 export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 	static override type = PROMPT_TYPE
@@ -89,6 +113,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	const [catalog, setCatalog] = useState<OpenRouterModel[] | null>(null)
 	const [open, setOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
+	const runIdRef = useRef(0)
 
 	useEffect(() => {
 		let cancelled = false
@@ -130,18 +155,31 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	}
 
 	const run = () => {
-		const bounds = editor.getShapePageBounds(shape)
+		const current = editor.getShape<PromptShape>(shape.id)
+		if (!current) return
+		const bounds = editor.getShapePageBounds(current)
 		if (!bounds) return
 		const models = selectedModels
 		if (models.length === 0) return
+		const apiKey = settings.apiKey
+		if (!apiKey) return
 
+		const promptText = renderPlaintextFromRichText(editor, current.props.richText).trim()
+		const messages: ChatMessage[] = [
+			{ role: 'system', content: SYSTEM_PROMPT },
+			{ role: 'user', content: promptText || 'Create a simple, attractive design.' },
+		]
+
+		const runId = ++runIdRef.current
 		const promptX = bounds.maxX
 		const promptY = bounds.midY
 		const outputX = bounds.maxX + ARTEFACT_OFFSET_X
 		const totalH = (models.length - 1) * ARTEFACT_GAP
 
+		const outputs: { model: string; outputId: TLShapeId }[] = []
+
 		editor.run(() => {
-			const spawnedIds = (shape.meta as { spawnedIds?: TLShapeId[] }).spawnedIds
+			const spawnedIds = (current.meta as { spawnedIds?: TLShapeId[] }).spawnedIds
 			if (spawnedIds && spawnedIds.length > 0) {
 				editor.deleteShapes(spawnedIds)
 			}
@@ -161,7 +199,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					props: {
 						w: ARTEFACT_W,
 						h: ARTEFACT_H,
-						code: artefactCode(modelName(model)),
+						code: GENERATING_CODE,
 					},
 				})
 
@@ -186,7 +224,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				editor.createBinding({
 					type: 'arrow',
 					fromId: arrowId,
-					toId: shape.id,
+					toId: current.id,
 					props: { ...bindingProps, terminal: 'start' },
 				})
 				editor.createBinding({
@@ -197,9 +235,22 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				})
 
 				nextSpawnedIds.push(outputId, arrowId)
+				outputs.push({ model, outputId })
 			})
 
-			editor.updateShape({ id: shape.id, type: shape.type, meta: { spawnedIds: nextSpawnedIds } })
+			editor.updateShape({ id: current.id, type: current.type, meta: { spawnedIds: nextSpawnedIds } })
+		})
+
+		const updateArtefact = (outputId: TLShapeId, code: string) => {
+			if (runIdRef.current !== runId) return
+			if (!editor.getShape(outputId)) return
+			editor.updateShape({ id: outputId, type: 'artefact', props: { code } })
+		}
+
+		outputs.forEach(({ model, outputId }) => {
+			chatCompletion({ apiKey, model, messages })
+				.then((content) => updateArtefact(outputId, stripCodeFences(content)))
+				.catch((error: Error) => updateArtefact(outputId, errorCode(error.message)))
 		})
 	}
 
