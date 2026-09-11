@@ -28,8 +28,9 @@ Build check: `npm run build`
   title, a multi-select model dropdown, and a play SVG button on the right.
 - Prompt text is editable rich text (double-click or select + Enter).
 - Play spawns one output artefact (HTML preview) per selected model, with
-  arrows bound from the prompt to each, simulating a model fan-out. Re-running
-  replaces the previous outputs (tracked via shape meta).
+  arrows bound from the prompt to each (each arrow labeled with the model
+  name), simulating a model fan-out. Re-running replaces the previous outputs
+  (tracked via shape meta).
 - Verified: `npm run build` and browser test (edit text in place; select models
   in the dropdown; play creates matching artefacts + bound arrows; re-run
   replaces them).

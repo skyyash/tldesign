@@ -147,6 +147,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					props: {
 						start: { x: promptX, y: promptY },
 						end: { x: outputX, y: outputMidY },
+						richText: toRichText(model),
 					},
 				})
 
