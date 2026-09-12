@@ -188,6 +188,23 @@ Build check: `npm run build`
 - Verified: `npm run build` and browser probes (request shapes, auth headers,
   and message formats captured for all providers).
 
+### 15. Multi-provider settings + simplified model enabling (2026-09-11)
+
+- Settings store now holds `apiKeys: Record<ProviderId, string>` (session-only);
+  a legacy OpenRouter key migrates into the `openrouter` slot.
+- Settings modal is now per-provider API key inputs (OpenAI, Gemini, Groq,
+  Anthropic, OpenRouter). A provider with a key is enabled; the per-model
+  catalog browser was removed.
+- Model catalog aggregates enabled providers' models (live fetch with the key,
+  static fallback per provider); models carry `provider` and use `provider:id`
+  composite keys.
+- Prompt dropdown lists models grouped by provider; run routes each selected
+  model to its provider's client via `chatCompletionForProvider`.
+- Verified: `npm run build` and browser test with a mocked network (per-provider
+  keys persist; dropdown groups OpenAI + Gemini models; running
+  gpt-4o/gpt-4o-mini/gemini-2.0-flash filled artefacts with each provider's
+  output).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB

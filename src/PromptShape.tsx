@@ -15,8 +15,15 @@ import {
 	useValue,
 } from 'tldraw'
 import { Knob } from './lib/Knob'
-import { OpenRouterModel, displayName, getModelCatalog } from './lib/modelCatalog'
-import { ChatMessage, chatCompletion } from './lib/openrouter'
+import { ChatMessage } from './lib/openrouter'
+import { displayName, getModelCatalog } from './lib/modelCatalog'
+import {
+	chatCompletionForProvider,
+	modelKey,
+	providerName,
+	splitModelKey,
+	ProviderModel,
+} from './lib/providers'
 import { useSettings } from './lib/settings'
 
 const PROMPT_TYPE = 'prompt'
@@ -105,16 +112,16 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		[editor, shape.id]
 	)
 
-	const [catalog, setCatalog] = useState<OpenRouterModel[] | null>(null)
+	const [catalog, setCatalog] = useState<ProviderModel[] | null>(null)
 	const [open, setOpen] = useState(false)
 	const dropdownRef = useRef<HTMLDivElement>(null)
 	const runIdRef = useRef(0)
 
 	useEffect(() => {
 		let cancelled = false
-		getModelCatalog()
-			.then((result) => {
-				if (!cancelled) setCatalog(result.models)
+		getModelCatalog(settings.apiKeys)
+			.then((models) => {
+				if (!cancelled) setCatalog(models)
 			})
 			.catch(() => {
 				// leave catalog as null; ids are shown as-is
@@ -122,7 +129,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		return () => {
 			cancelled = true
 		}
-	}, [])
+	}, [settings.apiKeys])
 
 	useEffect(() => {
 		if (!open) return
@@ -133,13 +140,24 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		return () => document.removeEventListener('pointerdown', onPointerDown, true)
 	}, [open])
 
-	const hasKey = settings.apiKey.length > 0
-	const selectedModels = shape.props.models.filter((id) => settings.enabledModels.includes(id))
+	const hasKey = Object.values(settings.apiKeys).some((key) => !!key)
+	const selectedModels = shape.props.models.filter((key) =>
+		catalog?.some((model) => modelKey(model.provider, model.id) === key)
+	)
 
-	const modelName = (id: string) => {
-		const model = catalog?.find((m) => m.id === id)
-		return model ? displayName(model) : id
+	const modelName = (key: string) => {
+		const model = catalog?.find((m) => modelKey(m.provider, m.id) === key)
+		return model ? displayName(model) : key
 	}
+
+	const groups = new Map<string, ProviderModel[]>()
+	for (const model of catalog ?? []) {
+		const name = providerName(model.provider)
+		const list = groups.get(name)
+		if (list) list.push(model)
+		else groups.set(name, [model])
+	}
+	const groupEntries = [...groups.entries()]
 
 	const toggleModel = (model: string) => {
 		const has = shape.props.models.includes(model)
@@ -156,8 +174,6 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		if (!bounds) return
 		const models = selectedModels
 		if (models.length === 0) return
-		const apiKey = settings.apiKey
-		if (!apiKey) return
 
 		const promptText = renderPlaintextFromRichText(editor, current.props.richText).trim()
 		const messages: ChatMessage[] = [
@@ -242,7 +258,10 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		}
 
 		outputs.forEach(({ model, outputId }) => {
-			chatCompletion({ apiKey, model, messages })
+			const { provider, id } = splitModelKey(model)
+			const apiKey = settings.apiKeys[provider]
+			if (!apiKey) return
+			chatCompletionForProvider({ provider, apiKey, model: id, messages })
 				.then((content) => updateArtefact(outputId, stripCodeFences(content)))
 				.catch((error: Error) => updateArtefact(outputId, errorCode(error.message)))
 		})
@@ -352,9 +371,9 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 											lineHeight: 1.4,
 										}}
 									>
-										Add your OpenRouter API key in Settings (gear icon) to connect models.
+										Add an API key in Settings (gear icon) to connect a provider.
 									</div>
-								) : settings.enabledModels.length === 0 ? (
+								) : groupEntries.length === 0 ? (
 									<div
 										style={{
 											padding: '10px 12px',
@@ -364,30 +383,49 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 											lineHeight: 1.4,
 										}}
 									>
-										No models enabled yet. Enable models in Settings.
+										No models available. Add a provider key in Settings.
 									</div>
 								) : (
-									settings.enabledModels.map((model) => (
-										<label
-											key={model}
-											style={{
-												display: 'flex',
-												alignItems: 'center',
-												gap: 8,
-												padding: '6px 8px',
-												borderRadius: 6,
-												cursor: 'pointer',
-												fontSize: 13,
-												color: 'var(--tl-color-text-1)',
-											}}
-										>
-											<input
-												type="checkbox"
-												checked={selectedModels.includes(model)}
-												onChange={() => toggleModel(model)}
-											/>
-											{modelName(model)}
-										</label>
+									groupEntries.map(([name, models]) => (
+										<div key={name}>
+											<div
+												style={{
+													padding: '4px 8px',
+													fontSize: 11,
+													fontWeight: 700,
+													textTransform: 'uppercase',
+													letterSpacing: '0.05em',
+													opacity: 0.6,
+												}}
+											>
+												{name}
+											</div>
+											{models.map((model) => {
+												const key = modelKey(model.provider, model.id)
+												return (
+													<label
+														key={key}
+														style={{
+															display: 'flex',
+															alignItems: 'center',
+															gap: 8,
+															padding: '6px 8px',
+															borderRadius: 6,
+															cursor: 'pointer',
+															fontSize: 13,
+															color: 'var(--tl-color-text-1)',
+														}}
+													>
+														<input
+															type="checkbox"
+															checked={selectedModels.includes(key)}
+															onChange={() => toggleModel(key)}
+														/>
+														{displayName(model)}
+													</label>
+												)
+											})}
+										</div>
 									))
 								)}
 							</div>

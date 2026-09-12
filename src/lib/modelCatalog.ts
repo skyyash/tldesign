@@ -1,168 +1,54 @@
-import { OpenRouterModel, fetchModels } from './openrouter'
+import { PROVIDER_LIST, ProviderId, ProviderModel } from './providers'
 
-export type { OpenRouterModel } from './openrouter'
-
-const CACHE_KEY = 'tldesign.modelCatalog'
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
-
-interface CatalogCache {
-	fetchedAt: number
-	models: OpenRouterModel[]
+const FALLBACK_MODELS: Record<ProviderId, ProviderModel[]> = {
+	openai: [
+		{ provider: 'openai', id: 'gpt-4o', name: 'GPT-4o', context_length: 128_000 },
+		{ provider: 'openai', id: 'gpt-4o-mini', name: 'GPT-4o mini', context_length: 128_000 },
+		{ provider: 'openai', id: 'gpt-4.1', name: 'GPT-4.1', context_length: 1_047_576 },
+	],
+	gemini: [
+		{ provider: 'gemini', id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', context_length: 1_048_576 },
+	],
+	groq: [
+		{ provider: 'groq', id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', context_length: 131_072 },
+		{ provider: 'groq', id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', context_length: 131_072 },
+		{ provider: 'groq', id: 'qwen-2.5-coder-32b', name: 'Qwen 2.5 Coder 32B', context_length: 131_072 },
+	],
+	anthropic: [
+		{ provider: 'anthropic', id: 'claude-opus-4-5', name: 'Claude Opus 4.5', context_length: 200_000 },
+		{ provider: 'anthropic', id: 'claude-sonnet-5', name: 'Claude Sonnet 5', context_length: 200_000 },
+		{ provider: 'anthropic', id: 'claude-sonnet-4-5', name: 'Claude Sonnet 4.5', context_length: 200_000 },
+		{ provider: 'anthropic', id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5', context_length: 200_000 },
+	],
+	openrouter: [
+		{ provider: 'openrouter', id: 'openai/gpt-4o', name: 'GPT-4o', context_length: 128_000 },
+		{ provider: 'openrouter', id: 'openai/gpt-4o-mini', name: 'GPT-4o mini', context_length: 128_000 },
+		{ provider: 'openrouter', id: 'google/gemini-2.0-flash', name: 'Gemini 2.0 Flash', context_length: 1_048_576 },
+		{ provider: 'openrouter', id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B', context_length: 131_072 },
+		{ provider: 'openrouter', id: 'anthropic/claude-sonnet-4', name: 'Claude Sonnet 4', context_length: 200_000 },
+	],
 }
 
-const FALLBACK_MODELS: OpenRouterModel[] = [
-	{
-		id: 'openai/gpt-4o',
-		name: 'GPT-4o',
-		context_length: 128_000,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.0000025', completion: '0.00001' },
-	},
-	{
-		id: 'openai/gpt-4o-mini',
-		name: 'GPT-4o mini',
-		context_length: 128_000,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.00000015', completion: '0.0000006' },
-	},
-	{
-		id: 'openai/gpt-4.1',
-		name: 'GPT-4.1',
-		context_length: 1_047_576,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0.000002', completion: '0.000008' },
-	},
-	{
-		id: 'anthropic/claude-3.5-sonnet',
-		name: 'Claude 3.5 Sonnet',
-		context_length: 200_000,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.000003', completion: '0.000015' },
-	},
-	{
-		id: 'anthropic/claude-3.5-haiku',
-		name: 'Claude 3.5 Haiku',
-		context_length: 200_000,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.0000008', completion: '0.000004' },
-	},
-	{
-		id: 'google/gemini-2.0-flash',
-		name: 'Gemini 2.0 Flash',
-		context_length: 1_048_576,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.0000001', completion: '0.0000004' },
-	},
-	{
-		id: 'google/gemini-2.5-flash',
-		name: 'Gemini 2.5 Flash',
-		context_length: 1_048_576,
-		architecture: { input_modalities: ['text', 'image'], output_modalities: ['text'] },
-		pricing: { prompt: '0.0000003', completion: '0.0000025' },
-	},
-	{
-		id: 'meta-llama/llama-3.1-8b-instruct:free',
-		name: 'Llama 3.1 8B Instruct (free)',
-		context_length: 131_072,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0', completion: '0' },
-	},
-	{
-		id: 'meta-llama/llama-3.1-70b-instruct',
-		name: 'Llama 3.1 70B Instruct',
-		context_length: 131_072,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0.00000042', completion: '0.00000042' },
-	},
-	{
-		id: 'mistralai/mistral-small-24b-instruct',
-		name: 'Mistral Small 24B',
-		context_length: 32_768,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0.0000001', completion: '0.0000003' },
-	},
-	{
-		id: 'deepseek/deepseek-chat',
-		name: 'DeepSeek Chat',
-		context_length: 131_072,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0.00000014', completion: '0.00000028' },
-	},
-	{
-		id: 'qwen/qwen-2.5-coder-32b-instruct',
-		name: 'Qwen 2.5 Coder 32B',
-		context_length: 131_072,
-		architecture: { input_modalities: ['text'], output_modalities: ['text'] },
-		pricing: { prompt: '0.00000018', completion: '0.00000036' },
-	},
-]
-
-function readCache(): CatalogCache | null {
-	try {
-		const raw = localStorage.getItem(CACHE_KEY)
-		if (!raw) return null
-		const parsed = JSON.parse(raw) as CatalogCache
-		if (!parsed || !Array.isArray(parsed.models)) return null
-		return parsed
-	} catch {
-		return null
-	}
+export async function getModelCatalog(
+	apiKeys: Partial<Record<ProviderId, string>>
+): Promise<ProviderModel[]> {
+	const results = await Promise.all(
+		PROVIDER_LIST.map(async (provider) => {
+			const apiKey = apiKeys[provider.id]
+			if (!apiKey) return []
+			try {
+				const models = await provider.fetchModels(apiKey)
+				return models.length > 0 ? models : FALLBACK_MODELS[provider.id]
+			} catch {
+				return FALLBACK_MODELS[provider.id]
+			}
+		})
+	)
+	return results.flat()
 }
 
-function writeCache(models: OpenRouterModel[]) {
-	localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), models }))
-}
-
-function isFresh(cache: CatalogCache) {
-	return Date.now() - cache.fetchedAt < CACHE_TTL_MS
-}
-
-export type CatalogSource = 'cache' | 'network' | 'fallback'
-
-export async function getModelCatalog(): Promise<{
-	models: OpenRouterModel[]
-	source: CatalogSource
-}> {
-	const cached = readCache()
-	if (cached && isFresh(cached)) {
-		return { models: cached.models, source: 'cache' }
-	}
-
-	try {
-		const models = await fetchModels()
-		if (models.length > 0) {
-			writeCache(models)
-			return { models, source: 'network' }
-		}
-	} catch {
-		// fall through to stale cache or static fallback
-	}
-
-	if (cached) {
-		return { models: cached.models, source: 'cache' }
-	}
-
-	return { models: FALLBACK_MODELS, source: 'fallback' }
-}
-
-export function authorOf(model: OpenRouterModel): string {
-	return model.id.split('/')[0] || 'unknown'
-}
-
-export function isFreeModel(model: OpenRouterModel): boolean {
-	return model.id.endsWith(':free') || Number(model.pricing.prompt) === 0
-}
-
-export function promptPricePerMillion(model: OpenRouterModel): number {
-	return Number(model.pricing.prompt) * 1_000_000
-}
-
-export function formatContextLength(contextLength: number): string {
-	if (contextLength >= 1_000_000) return `${(contextLength / 1_000_000).toFixed(1)}M`
-	if (contextLength >= 1000) return `${Math.round(contextLength / 1000)}K`
-	return String(contextLength)
-}
-
-export function displayName(model: OpenRouterModel): string {
+export function displayName(model: ProviderModel): string {
 	return model.name || model.id
 }

@@ -1,56 +1,41 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { ProviderId } from './providers/types'
 
-const STORAGE_KEY = 'tldesign.settings'
-const SESSION_KEY = 'tldesign.apiKey'
+const SESSION_KEY = 'tldesign.apiKeys'
 
 export type Settings = {
-	apiKey: string
-	enabledModels: string[]
+	apiKeys: Partial<Record<ProviderId, string>>
 }
 
 function loadSettings(): Settings {
-	let enabledModels: string[] = []
-	let legacyApiKey = ''
+	let apiKeys: Partial<Record<ProviderId, string>> = {}
 	try {
-		const raw = localStorage.getItem(STORAGE_KEY)
+		const raw = sessionStorage.getItem(SESSION_KEY)
 		if (raw) {
-			const parsed = JSON.parse(raw) as Partial<Settings>
-			if (Array.isArray(parsed.enabledModels)) {
-				enabledModels = parsed.enabledModels.filter((id): id is string => typeof id === 'string')
-			}
-			if (typeof parsed.apiKey === 'string') legacyApiKey = parsed.apiKey
+			const parsed = JSON.parse(raw) as Partial<Record<ProviderId, string>>
+			if (parsed && typeof parsed === 'object') apiKeys = parsed
 		}
 	} catch {
 		// ignore storage errors
 	}
 
-	let apiKey = ''
+	// Migrate a legacy OpenRouter key into the per-provider store once.
 	try {
-		apiKey = sessionStorage.getItem(SESSION_KEY) ?? ''
+		const legacy = sessionStorage.getItem('tldesign.apiKey')
+		if (legacy && !apiKeys.openrouter) {
+			apiKeys = { ...apiKeys, openrouter: legacy }
+			sessionStorage.removeItem('tldesign.apiKey')
+		}
 	} catch {
 		// ignore storage errors
 	}
 
-	// The API key is session-only. Migrate a legacy localStorage key into the
-	// session once, then clear it from localStorage.
-	if (!apiKey && legacyApiKey) {
-		apiKey = legacyApiKey
-		try {
-			sessionStorage.setItem(SESSION_KEY, apiKey)
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ enabledModels }))
-		} catch {
-			// ignore storage errors
-		}
-	}
-
-	return { apiKey, enabledModels }
+	return { apiKeys }
 }
 
 interface SettingsContextValue {
 	settings: Settings
-	setApiKey: (key: string) => void
-	toggleModel: (id: string) => void
-	setEnabledModels: (ids: string[]) => void
+	setApiKey: (provider: ProviderId, key: string) => void
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null)
@@ -61,29 +46,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 	const update = (next: Settings) => {
 		setSettings(next)
 		try {
-			// apiKey lives only in sessionStorage: cleared when the tab closes.
-			if (next.apiKey) sessionStorage.setItem(SESSION_KEY, next.apiKey)
-			else sessionStorage.removeItem(SESSION_KEY)
-			localStorage.setItem(STORAGE_KEY, JSON.stringify({ enabledModels: next.enabledModels }))
+			sessionStorage.setItem(SESSION_KEY, JSON.stringify(next.apiKeys))
 		} catch {
 			// ignore storage errors
 		}
 	}
 
-	const setApiKey = (apiKey: string) => update({ ...settings, apiKey })
-
-	const toggleModel = (id: string) => {
-		const has = settings.enabledModels.includes(id)
-		const enabledModels = has
-			? settings.enabledModels.filter((model) => model !== id)
-			: [...settings.enabledModels, id]
-		update({ ...settings, enabledModels })
+	const setApiKey = (provider: ProviderId, key: string) => {
+		const apiKeys = { ...settings.apiKeys, [provider]: key }
+		update({ apiKeys })
 	}
 
-	const setEnabledModels = (enabledModels: string[]) => update({ ...settings, enabledModels })
-
 	return (
-		<SettingsContext.Provider value={{ settings, setApiKey, toggleModel, setEnabledModels }}>
+		<SettingsContext.Provider value={{ settings, setApiKey }}>
 			{children}
 		</SettingsContext.Provider>
 	)
