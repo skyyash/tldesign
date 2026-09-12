@@ -5,6 +5,7 @@ import {
 	T,
 	TLShape,
 	useEditor,
+	useValue,
 } from 'tldraw'
 
 const ARTEFACT_TYPE = 'artefact'
@@ -47,6 +48,12 @@ export class ArtefactShapeUtil extends BaseBoxShapeUtil<ArtefactShape> {
 }
 
 function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
+	const editor = useEditor()
+	const isSelected = useValue(
+		'is selected',
+		() => editor.getOnlySelectedShapeId() === shape.id,
+		[editor, shape.id]
+	)
 	const [editing, setEditing] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
 
@@ -177,7 +184,12 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 						srcDoc={shape.props.code}
 						sandbox="allow-scripts"
 						title="Artefact preview"
-						style={{ width: '100%', height: '100%', border: 'none', pointerEvents: 'all' }}
+						style={{
+							width: '100%',
+							height: '100%',
+							border: 'none',
+							pointerEvents: isSelected ? 'all' : 'none',
+						}}
 					/>
 				)}
 			</div>

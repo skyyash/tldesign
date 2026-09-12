@@ -157,8 +157,12 @@ Build check: `npm run build`
   `resizeBox` `onResize`), so both resize via the standard selection handles.
 - The prompt text area clips overflow, so long text wraps and stays inside the
   shape.
+- The artefact preview is interactive only while the shape is selected: the
+  first click on its body selects it, then the iframe receives pointer events.
+  Resize handles appear once selected.
 - Verified: `npm run build` and browser test (long prompt text stays within the
-  shape bounds; resize mechanism is tldraw's standard box resize).
+  shape bounds; artefact body-click selects and makes the iframe interactive;
+  resize goes through the standard box resize path).
 
 ## Known issues
 
