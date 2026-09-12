@@ -164,6 +164,20 @@ Build check: `npm run build`
   shape bounds; artefact body-click selects and makes the iframe interactive;
   resize goes through the standard box resize path).
 
+### 13. Connection knobs on custom shapes (2026-09-11)
+
+- New `src/lib/knobArrow.ts`: `knobHandles()` returns four edge knobs (vertex
+  handles) for a shape, and helpers that create a bound arrow when a knob is
+  dragged. The arrow starts bound to the source shape and its end follows the
+  pointer; on drop it binds to the shape under the pointer (arrows and the
+  source are skipped as targets).
+- `prompt` and `artefact` utils implement `getHandles` plus
+  `onHandleDragStart/Drag/DragEnd/Cancel`, so dragging a knob on either custom
+  shape draws a new arrow and connects it to another custom shape.
+- Verified: `npm run build` and browser test via the editor input pipeline
+  (knob drag creates an arrow; start bound to the source, end bound to the
+  target; both prompt->artefact and artefact->prompt work).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
