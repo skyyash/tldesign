@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+	BaseBoxShapeUtil,
 	createShapeId,
 	HTMLContainer,
-	Rectangle2d,
 	renderPlaintextFromRichText,
 	RichTextLabel,
 	richTextValidator,
-	ShapeUtil,
 	T,
 	TLRichText,
 	TLShape,
@@ -59,7 +58,7 @@ const stripCodeFences = (html: string) => {
 	return match ? match[1] : html
 }
 
-export class PromptShapeUtil extends ShapeUtil<PromptShape> {
+export class PromptShapeUtil extends BaseBoxShapeUtil<PromptShape> {
 	static override type = PROMPT_TYPE
 	static override props = {
 		w: T.number,
@@ -79,10 +78,6 @@ export class PromptShapeUtil extends ShapeUtil<PromptShape> {
 			richText: toRichText('Describe what you want to design...'),
 			models: [],
 		}
-	}
-
-	getGeometry(shape: PromptShape) {
-		return new Rectangle2d({ width: shape.props.w, height: shape.props.h, isFilled: true })
 	}
 
 	override getText(shape: PromptShape) {
@@ -424,7 +419,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					</button>
 				</div>
 			</div>
-			<div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
+			<div style={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 				<RichTextLabel
 					shapeId={shape.id}
 					type={shape.type}

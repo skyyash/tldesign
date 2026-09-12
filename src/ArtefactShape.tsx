@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
+	BaseBoxShapeUtil,
 	HTMLContainer,
-	Rectangle2d,
-	ShapeUtil,
 	T,
 	TLShape,
 	useEditor,
@@ -24,16 +23,12 @@ const DEFAULT_CODE = `<style>
 <h1>Hello from your artefact</h1>
 <p>Double-click to edit the code.</p>`
 
-export class ArtefactShapeUtil extends ShapeUtil<ArtefactShape> {
+export class ArtefactShapeUtil extends BaseBoxShapeUtil<ArtefactShape> {
 	static override type = ARTEFACT_TYPE
 	static override props = { w: T.number, h: T.number, code: T.string }
 
 	getDefaultProps(): ArtefactShape['props'] {
 		return { w: 320, h: 240, code: DEFAULT_CODE }
-	}
-
-	getGeometry(shape: ArtefactShape) {
-		return new Rectangle2d({ width: shape.props.w, height: shape.props.h, isFilled: true })
 	}
 
 	override getText(shape: ArtefactShape) {

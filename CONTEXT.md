@@ -151,6 +151,15 @@ Build check: `npm run build`
   `/chat/completions` (request body correct; artefact filled with output; error
   state renders; rapid re-run keeps only the latest result).
 
+### 12. Resizable custom shapes + prompt text clipping (2026-09-11)
+
+- `prompt` and `artefact` utils now extend `BaseBoxShapeUtil` (inherits the
+  `resizeBox` `onResize`), so both resize via the standard selection handles.
+- The prompt text area clips overflow, so long text wraps and stays inside the
+  shape.
+- Verified: `npm run build` and browser test (long prompt text stays within the
+  shape bounds; resize mechanism is tldraw's standard box resize).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
