@@ -7,7 +7,6 @@ import {
 	RichTextLabel,
 	richTextValidator,
 	T,
-	TLHandleDragInfo,
 	TLRichText,
 	TLShape,
 	TLShapeId,
@@ -15,13 +14,7 @@ import {
 	useEditor,
 	useValue,
 } from 'tldraw'
-import {
-	cancelKnobArrow,
-	dragKnobArrow,
-	endKnobArrow,
-	knobHandles,
-	startKnobArrow,
-} from './lib/knobArrow'
+import { Knob } from './lib/Knob'
 import { OpenRouterModel, displayName, getModelCatalog } from './lib/modelCatalog'
 import { ChatMessage, chatCompletion } from './lib/openrouter'
 import { useSettings } from './lib/settings'
@@ -100,26 +93,6 @@ export class PromptShapeUtil extends BaseBoxShapeUtil<PromptShape> {
 		const path = new Path2D()
 		path.rect(0, 0, shape.props.w, shape.props.h)
 		return path
-	}
-
-	override getHandles(shape: PromptShape) {
-		return knobHandles(shape.props.w, shape.props.h)
-	}
-
-	override onHandleDragStart(shape: PromptShape, info: TLHandleDragInfo<PromptShape>) {
-		startKnobArrow(this.editor, shape, info.handle)
-	}
-
-	override onHandleDrag(shape: PromptShape) {
-		dragKnobArrow(this.editor, shape)
-	}
-
-	override onHandleDragEnd(current: PromptShape) {
-		endKnobArrow(this.editor, current)
-	}
-
-	override onHandleDragCancel(current: PromptShape) {
-		cancelKnobArrow(this.editor, current)
 	}
 }
 
@@ -463,6 +436,10 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 					padding={12}
 				/>
 			</div>
+			<Knob editor={editor} shape={shape} x={shape.props.w / 2} y={0} />
+			<Knob editor={editor} shape={shape} x={shape.props.w} y={shape.props.h / 2} />
+			<Knob editor={editor} shape={shape} x={shape.props.w / 2} y={shape.props.h} />
+			<Knob editor={editor} shape={shape} x={0} y={shape.props.h / 2} />
 		</HTMLContainer>
 	)
 }

@@ -166,17 +166,14 @@ Build check: `npm run build`
 
 ### 13. Connection knobs on custom shapes (2026-09-11)
 
-- New `src/lib/knobArrow.ts`: `knobHandles()` returns four edge knobs (vertex
-  handles) for a shape, and helpers that create a bound arrow when a knob is
-  dragged. The arrow starts bound to the source shape and its end follows the
-  pointer; on drop it binds to the shape under the pointer (arrows and the
-  source are skipped as targets).
-- `prompt` and `artefact` utils implement `getHandles` plus
-  `onHandleDragStart/Drag/DragEnd/Cancel`, so dragging a knob on either custom
-  shape draws a new arrow and connects it to another custom shape.
+- New `src/lib/Knob.tsx`: an always-visible edge knob rendered in each custom
+  shape's component. Dragging a knob creates an arrow bound at its start to the
+  shape; the end follows the pointer and binds on drop to the shape under it
+  (arrows and the source are skipped as targets). No selection required.
+- `prompt` and `artefact` components render four knobs (one per edge).
 - Verified: `npm run build` and browser test via the editor input pipeline
-  (knob drag creates an arrow; start bound to the source, end bound to the
-  target; both prompt->artefact and artefact->prompt work).
+  (knobs always visible; knob drag connects prompt<->artefact in both
+  directions).
 
 ## Known issues
 

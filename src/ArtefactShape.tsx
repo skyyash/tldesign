@@ -3,18 +3,11 @@ import {
 	BaseBoxShapeUtil,
 	HTMLContainer,
 	T,
-	TLHandleDragInfo,
 	TLShape,
 	useEditor,
 	useValue,
 } from 'tldraw'
-import {
-	cancelKnobArrow,
-	dragKnobArrow,
-	endKnobArrow,
-	knobHandles,
-	startKnobArrow,
-} from './lib/knobArrow'
+import { Knob } from './lib/Knob'
 
 const ARTEFACT_TYPE = 'artefact'
 
@@ -53,26 +46,6 @@ export class ArtefactShapeUtil extends BaseBoxShapeUtil<ArtefactShape> {
 		path.rect(0, 0, shape.props.w, shape.props.h)
 		return path
 	}
-
-	override getHandles(shape: ArtefactShape) {
-		return knobHandles(shape.props.w, shape.props.h)
-	}
-
-	override onHandleDragStart(shape: ArtefactShape, info: TLHandleDragInfo<ArtefactShape>) {
-		startKnobArrow(this.editor, shape, info.handle)
-	}
-
-	override onHandleDrag(shape: ArtefactShape) {
-		dragKnobArrow(this.editor, shape)
-	}
-
-	override onHandleDragEnd(current: ArtefactShape) {
-		endKnobArrow(this.editor, current)
-	}
-
-	override onHandleDragCancel(current: ArtefactShape) {
-		cancelKnobArrow(this.editor, current)
-	}
 }
 
 function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
@@ -109,7 +82,6 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 				background: '#fff',
 				border: '2px solid var(--tl-color-text-1)',
 				borderRadius: 8,
-				overflow: 'hidden',
 			}}
 		>
 			<div ref={containerRef} style={{ display: 'contents' }}>
@@ -222,6 +194,10 @@ function ArtefactComponent({ shape }: { shape: ArtefactShape }) {
 				)}
 			</div>
 			</div>
+			<Knob editor={editor} shape={shape} x={shape.props.w / 2} y={0} />
+			<Knob editor={editor} shape={shape} x={shape.props.w} y={shape.props.h / 2} />
+			<Knob editor={editor} shape={shape} x={shape.props.w / 2} y={shape.props.h} />
+			<Knob editor={editor} shape={shape} x={0} y={shape.props.h / 2} />
 		</HTMLContainer>
 	)
 }
