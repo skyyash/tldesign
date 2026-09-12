@@ -175,6 +175,19 @@ Build check: `npm run build`
   (knobs always visible; knob drag connects prompt<->artefact in both
   directions).
 
+### 14. Multi-provider clients (2026-09-11)
+
+- New `src/lib/providers/`: a `Provider` interface plus clients for OpenAI,
+  Google Gemini, Groq, and Anthropic (OpenRouter wrapped as a provider too).
+  Registry in `index.ts` with composite `provider:id` model keys and
+  `chatCompletionForProvider` routing.
+- Gemini uses `generateContent` (contents/systemInstruction), Anthropic uses
+  `/messages` (x-api-key, anthropic-version, system). OpenAI/Groq/OpenRouter are
+  OpenAI-compatible chat completions.
+- GitHub Models was dropped (retired by GitHub in July 2026).
+- Verified: `npm run build` and browser probes (request shapes, auth headers,
+  and message formats captured for all providers).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
