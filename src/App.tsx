@@ -39,7 +39,7 @@ import { ArtefactShapeUtil } from './ArtefactShape'
 import { DesignsHome } from './DesignsHome'
 import { PromptShapeUtil } from './PromptShape'
 import { SettingsModal } from './SettingsModal'
-import { createDesign, deleteDesign, listDesigns, renameDesign, touchDesign } from './lib/designs'
+import { createDesign, deleteDesign, deleteDesignDocument, listDesigns, renameDesign, touchDesign } from './lib/designs'
 import { SettingsProvider } from './lib/settings'
 import { ArtefactTool, PromptTool } from './tools'
 
@@ -138,8 +138,9 @@ function App() {
 		refreshDesigns()
 	}
 
-	const handleDelete = (id: string) => {
+	const handleDelete = async (id: string) => {
 		if (!window.confirm('Delete this design?')) return
+		await deleteDesignDocument(id)
 		deleteDesign(id)
 		refreshDesigns()
 	}

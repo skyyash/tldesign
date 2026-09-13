@@ -236,12 +236,17 @@ Build check: `npm run build`
 - Verified: `npm run build` and a clean-design browser drag from an unselected
   prompt knob to an artefact. IndexedDB showed matching start and end bindings.
 
+### 19. Design-delete IndexedDB cleanup (2026-09-13)
+
+- Deleting a design now removes both its current and legacy per-design IndexedDB
+  document, then removes the registry entry.
+- Verified: `npm run build` and a browser test where the design-specific
+  database appeared after opening the design and disappeared after deletion.
+
 ## Known issues
 
-- Deleting a design removes it from the registry but leaves its IndexedDB
-  document orphaned (cleanup TODO).
 - Navbar profile button is a non-functional placeholder (no auth yet).
 
 ## Next
 
-- Design-delete IndexedDB cleanup; profile/auth.
+- Profile/auth.

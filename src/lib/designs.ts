@@ -49,3 +49,21 @@ export function touchDesign(id: string) {
 export function deleteDesign(id: string) {
 	saveDesigns(listDesigns().filter((design) => design.id !== id))
 }
+
+function deleteIndexedDbDatabase(name: string): Promise<void> {
+	return new Promise((resolve, reject) => {
+		if (!('indexedDB' in window)) {
+			resolve()
+			return
+		}
+		const request = indexedDB.deleteDatabase(name)
+		request.onsuccess = () => resolve()
+		request.onerror = () => reject(request.error ?? new Error(`Could not delete ${name}`))
+		request.onblocked = () => reject(new Error(`Deletion of ${name} is blocked`))
+	})
+}
+
+export async function deleteDesignDocument(id: string): Promise<void> {
+	await deleteIndexedDbDatabase(`TLDRAW_DOCUMENT_v2${id}`)
+	await deleteIndexedDbDatabase(`TLDRAW_ASSET_STORE_v1${id}`)
+}
