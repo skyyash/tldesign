@@ -205,6 +205,16 @@ Build check: `npm run build`
   gpt-4o/gpt-4o-mini/gemini-2.0-flash filled artefacts with each provider's
   output).
 
+### 16. Output-as-input chaining (2026-09-11)
+
+- When a prompt has incoming arrows from artefacts (drawn via the knobs), its
+  run now includes those artefacts' HTML content as context in the user message,
+  so a model's output can feed the next prompt.
+- The prompt navbar shows a connected-input chip (`⇢ n`).
+- Verified: `npm run build` and browser test (artefact chained into a second
+  prompt via an incoming arrow; the second prompt's request body included the
+  artefact's content as context; chip rendered).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB

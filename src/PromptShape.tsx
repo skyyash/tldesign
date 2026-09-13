@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
 	BaseBoxShapeUtil,
 	createShapeId,
+	Editor,
 	HTMLContainer,
 	renderPlaintextFromRichText,
 	RichTextLabel,
@@ -103,12 +104,43 @@ export class PromptShapeUtil extends BaseBoxShapeUtil<PromptShape> {
 	}
 }
 
+function getIncomingArtefactContent(editor: Editor, promptId: TLShapeId): string[] {
+	const contents: string[] = []
+	const incoming = editor
+		.getBindingsToShape(promptId, 'arrow')
+		.filter((binding) => binding.props.terminal === 'end')
+
+	for (const binding of incoming) {
+		const arrow = editor.getShape(binding.fromId)
+		if (!arrow) continue
+		const sourceBinding = editor
+			.getBindingsFromShape(arrow.id, 'arrow')
+			.find((b) => b.id !== binding.id)
+		if (!sourceBinding) continue
+		const source = editor.getShape(sourceBinding.toId)
+		if (source?.type === 'artefact') {
+			const code = (source.props as { code?: string }).code
+			if (code) contents.push(code)
+		}
+	}
+
+	return contents
+}
+
 function PromptComponent({ shape }: { shape: PromptShape }) {
 	const editor = useEditor()
 	const { settings } = useSettings()
 	const isSelected = useValue(
 		'is selected',
 		() => shape.id === editor.getOnlySelectedShapeId(),
+		[editor, shape.id]
+	)
+	const inputCount = useValue(
+		'input count',
+		() =>
+			editor
+				.getBindingsToShape(shape.id, 'arrow')
+				.filter((binding) => binding.props.terminal === 'end').length,
 		[editor, shape.id]
 	)
 
@@ -176,9 +208,16 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		if (models.length === 0) return
 
 		const promptText = renderPlaintextFromRichText(editor, current.props.richText).trim()
+		const incomingContent = getIncomingArtefactContent(editor, current.id)
+		const userContent =
+			incomingContent.length > 0
+				? `Here are previous outputs from connected artefacts:\n\n${incomingContent.join(
+						'\n\n---\n'
+				  )}\n\nNow implement the following: ${promptText || 'Create a simple, attractive design.'}`
+				: promptText || 'Create a simple, attractive design.'
 		const messages: ChatMessage[] = [
 			{ role: 'system', content: SYSTEM_PROMPT },
-			{ role: 'user', content: promptText || 'Create a simple, attractive design.' },
+			{ role: 'user', content: userContent },
 		]
 
 		const runId = ++runIdRef.current
@@ -308,6 +347,20 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 				>
 					Prompt
 				</span>
+				{inputCount > 0 && (
+					<span
+						title={`${inputCount} connected input${inputCount > 1 ? 's' : ''}`}
+						style={{
+							fontSize: 11,
+							padding: '2px 8px',
+							borderRadius: 999,
+							background: 'var(--tl-color-muted-1)',
+							whiteSpace: 'nowrap',
+						}}
+					>
+						⇢ {inputCount}
+					</span>
+				)}
 				<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
 					<div ref={dropdownRef}>
 						<button
