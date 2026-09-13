@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from './robust'
+import { readSSE } from './sse'
 import { Provider, ProviderModel } from './types'
 
 const BASE_URL = 'https://api.anthropic.com/v1'
@@ -50,5 +52,46 @@ export const anthropicProvider: Provider = {
 			throw new Error('Anthropic response missing content')
 		}
 		return text
+	},
+
+	async chatCompletionStream({ apiKey, model, messages, onDelta }) {
+		const system = messages.find((message) => message.role === 'system')?.content
+		const body: Record<string, unknown> = {
+			model,
+			max_tokens: 4096,
+			stream: true,
+			messages: messages
+				.filter((message) => message.role !== 'system')
+				.map((message) => ({ role: message.role, content: message.content })),
+		}
+		if (system) body.system = system
+
+		const response = await fetchWithTimeout(`${BASE_URL}/messages`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-api-key': apiKey,
+				'anthropic-version': '2023-06-01',
+			},
+			body: JSON.stringify(body),
+		})
+
+		let full = ''
+		for await (const data of readSSE(response)) {
+			try {
+				const json = JSON.parse(data) as {
+					type?: string
+					delta?: { type?: string; text?: string }
+				}
+				const delta = json.type === 'content_block_delta' && json.delta?.type === 'text_delta' ? json.delta.text : undefined
+				if (typeof delta === 'string') {
+					full += delta
+					onDelta(delta)
+				}
+			} catch {
+				// Ignore partial SSE JSON chunks.
+			}
+		}
+		return full
 	},
 }

@@ -1,3 +1,4 @@
+import { openaiCompatibleStream } from './openaiCompat'
 import { Provider, ProviderModel } from './types'
 
 const BASE_URL = 'https://api.openai.com/v1'
@@ -42,5 +43,9 @@ export const openaiProvider: Provider = {
 			throw new Error('OpenAI response missing content')
 		}
 		return content
+	},
+
+	async chatCompletionStream(opts) {
+		return openaiCompatibleStream(BASE_URL, opts)
 	},
 }

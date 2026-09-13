@@ -215,6 +215,18 @@ Build check: `npm run build`
   prompt via an incoming arrow; the second prompt's request body included the
   artefact's content as context; chip rendered).
 
+### 17. Streaming generation with retry and concurrency limits (2026-09-13)
+
+- New provider `chatCompletionStream()` methods: OpenAI/Groq/OpenRouter share an
+  SSE parser, while Gemini uses `streamGenerateContent` and Anthropic filters
+  `content_block_delta` text events.
+- Prompt runs now stream accumulated output into artefacts every 500 ms, run at
+  most two models concurrently, and retry retryable failures twice with
+  exponential backoff. Requests time out after 90 seconds.
+- Verified: `npm run build` and browser probes (SSE deltas accumulate, max
+  concurrency stays at two, a 429 is retried and then succeeds, and mocked
+  Gemini/Anthropic/OpenRouter streams parse correctly).
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
@@ -223,5 +235,4 @@ Build check: `npm run build`
 
 ## Next
 
-- Streaming responses into artefacts (currently fill on completion).
 - Design-delete IndexedDB cleanup; profile/auth.

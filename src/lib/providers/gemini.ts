@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from './robust'
+import { readSSE } from './sse'
 import { Provider, ProviderModel } from './types'
 
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta'
@@ -53,5 +55,43 @@ export const geminiProvider: Provider = {
 			throw new Error('Gemini response missing content')
 		}
 		return text
+	},
+
+	async chatCompletionStream({ apiKey, model, messages, onDelta }) {
+		const system = messages.find((message) => message.role === 'system')?.content
+		const contents = messages
+			.filter((message) => message.role !== 'system')
+			.map((message) => ({
+				role: message.role === 'assistant' ? 'model' : 'user',
+				parts: [{ text: message.content }],
+			}))
+		const body: Record<string, unknown> = { contents }
+		if (system) body.systemInstruction = { parts: [{ text: system }] }
+
+		const response = await fetchWithTimeout(
+			`${BASE_URL}/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body),
+			}
+		)
+
+		let full = ''
+		for await (const data of readSSE(response)) {
+			try {
+				const json = JSON.parse(data) as {
+					candidates?: { content?: { parts?: { text?: string }[] } }[]
+				}
+				const delta = json.candidates?.[0]?.content?.parts?.[0]?.text
+				if (typeof delta === 'string') {
+					full += delta
+					onDelta(delta)
+				}
+			} catch {
+				// Ignore partial SSE JSON chunks.
+			}
+		}
+		return full
 	},
 }

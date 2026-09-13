@@ -19,12 +19,13 @@ import { Knob } from './lib/Knob'
 import { ChatMessage } from './lib/openrouter'
 import { displayName, getModelCatalog } from './lib/modelCatalog'
 import {
-	chatCompletionForProvider,
+	chatCompletionStreamForProvider,
 	modelKey,
 	providerName,
 	splitModelKey,
 	ProviderModel,
 } from './lib/providers'
+import { runPool, withRetry } from './lib/providers/robust'
 import { useSettings } from './lib/settings'
 
 const PROMPT_TYPE = 'prompt'
@@ -296,13 +297,48 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 			editor.updateShape({ id: outputId, type: 'artefact', props: { code } })
 		}
 
-		outputs.forEach(({ model, outputId }) => {
+		const accumulated = new Map<TLShapeId, string>()
+		const pending = new Map<TLShapeId, string>()
+		const flushStreamedArtefacts = () => {
+			pending.forEach((code, outputId) => {
+				if (runIdRef.current !== runId) return
+				if (!editor.getShape(outputId)) return
+				editor.updateShape({ id: outputId, type: 'artefact', props: { code } })
+			})
+			pending.clear()
+		}
+		const flushTimer = setInterval(flushStreamedArtefacts, 500)
+
+		runPool(outputs, 2, async ({ model, outputId }) => {
 			const { provider, id } = splitModelKey(model)
 			const apiKey = settings.apiKeys[provider]
 			if (!apiKey) return
-			chatCompletionForProvider({ provider, apiKey, model: id, messages })
-				.then((content) => updateArtefact(outputId, stripCodeFences(content)))
-				.catch((error: Error) => updateArtefact(outputId, errorCode(error.message)))
+			try {
+				const full = await withRetry(() =>
+					chatCompletionStreamForProvider({
+						provider,
+						apiKey,
+						model: id,
+						messages,
+						onDelta: (delta) => {
+							if (runIdRef.current !== runId) return
+							const next = `${accumulated.get(outputId) ?? ''}${delta}`
+							accumulated.set(outputId, next)
+							pending.set(outputId, next)
+						},
+					})
+				)
+				if (!full.trim()) {
+					updateArtefact(outputId, errorCode('The model returned no output.'))
+				} else {
+					updateArtefact(outputId, stripCodeFences(full))
+				}
+			} catch (error) {
+				updateArtefact(outputId, errorCode(error instanceof Error ? error.message : String(error)))
+			}
+		}).finally(() => {
+			clearInterval(flushTimer)
+			flushStreamedArtefacts()
 		})
 	}
 

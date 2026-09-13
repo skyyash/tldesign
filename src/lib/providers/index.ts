@@ -29,13 +29,14 @@ export function providerName(provider: ProviderId): string {
 	return PROVIDERS[provider]?.name ?? provider
 }
 
-export async function chatCompletionForProvider(opts: {
+export async function chatCompletionStreamForProvider(opts: {
 	provider: ProviderId
 	apiKey: string
 	model: string
 	messages: ChatMessage[]
+	onDelta: (text: string) => void
 }): Promise<string> {
-	return PROVIDERS[opts.provider].chatCompletion(opts)
+	return PROVIDERS[opts.provider].chatCompletionStream(opts)
 }
 
 export type { Provider, ProviderId, ProviderModel }

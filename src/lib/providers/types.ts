@@ -18,4 +18,10 @@ export interface Provider {
 		model: string
 		messages: ChatMessage[]
 	}): Promise<string>
+	chatCompletionStream(opts: {
+		apiKey: string
+		model: string
+		messages: ChatMessage[]
+		onDelta: (text: string) => void
+	}): Promise<string>
 }

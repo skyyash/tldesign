@@ -1,3 +1,4 @@
+import { openaiCompatibleStream } from './openaiCompat'
 import { Provider, ProviderModel } from './types'
 
 const BASE_URL = 'https://api.groq.com/openai/v1'
@@ -42,5 +43,9 @@ export const groqProvider: Provider = {
 			throw new Error('Groq response missing content')
 		}
 		return content
+	},
+
+	async chatCompletionStream(opts) {
+		return openaiCompatibleStream(BASE_URL, opts)
 	},
 }
