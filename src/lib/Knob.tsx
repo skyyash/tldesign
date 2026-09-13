@@ -15,6 +15,15 @@ export function Knob({
 	y: number
 }) {
 	const [arrowId, setArrowId] = useState<TLShapeId | null>(null)
+	const [hovered, setHovered] = useState(false)
+
+	const updateDropTarget = (point: { x: number; y: number }) => {
+		const target = editor
+			.getShapesAtPoint(point, { hitInside: true, margin: 8 })
+			.find((candidate) => candidate.id !== shape.id && candidate.type !== 'arrow')
+		editor.setHintingShapes(target ? [target.id] : [])
+		return target
+	}
 
 	const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (e.button !== 0) return
@@ -51,16 +60,15 @@ export function Knob({
 	const handlePointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (!arrowId) return
 		const point = editor.screenToPage({ x: e.clientX, y: e.clientY })
+		updateDropTarget(point)
 		editor.updateShape({ id: arrowId, type: 'arrow', props: { end: { x: point.x, y: point.y } } })
 	}
 
 	const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
 		if (!arrowId) return
 		const point = editor.screenToPage({ x: e.clientX, y: e.clientY })
-		const candidates = editor.getShapesAtPoint(point, { hitInside: true, margin: 8 })
-		const target = candidates.find(
-			(candidate) => candidate.id !== shape.id && candidate.type !== 'arrow'
-		)
+		const target = updateDropTarget(point)
+		editor.setHintingShapes([])
 
 		if (target) {
 			editor.createBinding({
@@ -84,15 +92,19 @@ export function Knob({
 		if (!arrowId) return
 		editor.deleteShapes([arrowId])
 		setArrowId(null)
+		editor.setHintingShapes([])
 	}
 
 	return (
 		<div
 			data-knob="true"
+			title="Drag to create a connection"
 			onPointerDown={handlePointerDown}
 			onPointerMove={handlePointerMove}
 			onPointerUp={handlePointerUp}
 			onPointerCancel={handlePointerCancel}
+			onPointerEnter={() => setHovered(true)}
+			onPointerLeave={() => setHovered(false)}
 			style={{
 				position: 'absolute',
 				left: x - KNOB_SIZE / 2,
@@ -103,11 +115,15 @@ export function Knob({
 				borderRadius: '50%',
 				background: 'var(--tl-color-primary)',
 				border: '2px solid var(--tl-color-panel)',
-				boxShadow: '0 1px 4px rgba(0, 0, 0, 0.35)',
+				boxShadow:
+					arrowId || hovered
+						? '0 0 0 3px var(--tl-color-selected), 0 1px 4px rgba(0, 0, 0, 0.35)'
+						: '0 1px 4px rgba(0, 0, 0, 0.35)',
 				cursor: 'crosshair',
 				pointerEvents: 'all',
 				zIndex: 10,
 				touchAction: 'none',
+				transform: arrowId ? 'scale(1.2)' : hovered ? 'scale(1.15)' : 'none',
 			}}
 		/>
 	)

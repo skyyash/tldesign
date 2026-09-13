@@ -227,6 +227,15 @@ Build check: `npm run build`
   concurrency stays at two, a 429 is retried and then succeeds, and mocked
   Gemini/Anthropic/OpenRouter streams parse correctly).
 
+### 18. Knob drag affordances and target feedback (2026-09-13)
+
+- Always-visible connection knobs now show hover and active scale/ring states
+  and a “drag to create a connection” tooltip.
+- While dragging, the editor highlights the eligible drop target; the highlight
+  clears on release or cancel without changing the arrow-binding rules.
+- Verified: `npm run build` and a clean-design browser drag from an unselected
+  prompt knob to an artefact. IndexedDB showed matching start and end bindings.
+
 ## Known issues
 
 - Deleting a design removes it from the registry but leaves its IndexedDB
