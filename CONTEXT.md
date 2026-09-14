@@ -255,6 +255,17 @@ Build check: `npm run build`
   demo; the second prompt shows the `⇢ 2` input chip; reopen preserves the same
   shape counts).
 
+### 21. Fix Gemini API integration (2026-09-14)
+
+- Gemini `streamGenerateContent` returns newline-delimited JSON, not SSE, so the
+  SSE parser dropped every delta and runs ended in "no output". Added `alt=sse`
+  to the streaming URL.
+- Gemini fallback model list updated from retired models
+  (gemini-2.0-flash / 2.5-flash / 2.5-pro) to available ones (gemini-3.6-flash,
+  gemini-3.8-flash, gemini-flash-latest, gemini-pro-latest).
+- Verified with a live Gemini key: the model list fetches and a real prompt
+  streams generated HTML into an artefact.
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).

@@ -69,7 +69,7 @@ export const geminiProvider: Provider = {
 		if (system) body.systemInstruction = { parts: [{ text: system }] }
 
 		const response = await fetchWithTimeout(
-			`${BASE_URL}/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}`,
+			`${BASE_URL}/models/${model}:streamGenerateContent?key=${encodeURIComponent(apiKey)}&alt=sse`,
 			{
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },

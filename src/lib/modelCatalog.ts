@@ -7,9 +7,10 @@ const FALLBACK_MODELS: Record<ProviderId, ProviderModel[]> = {
 		{ provider: 'openai', id: 'gpt-4.1', name: 'GPT-4.1', context_length: 1_047_576 },
 	],
 	gemini: [
-		{ provider: 'gemini', id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', context_length: 1_048_576 },
-		{ provider: 'gemini', id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', context_length: 1_048_576 },
-		{ provider: 'gemini', id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-flash-latest', name: 'Gemini Flash (latest)', context_length: 1_048_576 },
+		{ provider: 'gemini', id: 'gemini-pro-latest', name: 'Gemini Pro (latest)', context_length: 1_048_576 },
 	],
 	groq: [
 		{ provider: 'groq', id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', context_length: 131_072 },
