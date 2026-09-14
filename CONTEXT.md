@@ -303,9 +303,47 @@ Build check: `npm run build`
   (button gone; project auto-created; 2 prompts, 4 artefacts, 7 labelled
   arrows, chain chip; all iframes carry seeded HTML).
 
+### 25. Three-stage showcase + in-place re-run (2026-09-14)
+
+- The showcase is now a full 3-stage pipeline on a coffee-subscription brief
+  ("Ember"): stage 1 fans one prompt out to four models (2 Gemini + 2 Groq),
+  stage 2 synthesizes the four outputs into one refined hero, stage 3 reuses
+  that design system to build a pricing section. Text shapes label the stages;
+  prefilled artefacts are polished so the canvas reads as a finished demo.
+- Seeded model IDs and `FALLBACK_MODELS` updated to live models (Gemini
+  3.6/3.8 Flash, Groq GPT-OSS 120B / Qwen 3.8 27B, etc.). The previous seed
+  referenced a retired Groq model.
+- Re-running a prompt now updates its existing arrow-bound artefacts in place
+  (same shapes, same arrows, same layout) when the output count matches the
+  selection, instead of spawning duplicates. Fresh prompts are unchanged.
+- Fixed a streaming race: the trailing flush could overwrite a finalized
+  artefact with the raw stream (leaving markdown code fences). Final writes now
+  clear the pending buffer.
+- Verified: `npm run build` and a live browser run with Gemini + Groq keys
+  (OpenRouter key returns 402, no credit, so it is not seeded). All three
+  stages regenerated in place with shape counts unchanged (3 prompts, 6
+  artefacts, 11 arrows); outputs clean, no fences. `gemini-3.6-flash` returned
+  transient 503s across two runs (handled by retry, then the error card).
+
+### 26. Bake browser canvas edits into the showcase seed (2026-09-14)
+
+- The showcase canvas was rearranged by hand in the browser (new "final better
+  one" prompt fed by two heroes, old synthesis output removed, title deleted,
+  artefacts resized ~4x). `showcaseSeed.ts` was regenerated from the saved
+  IndexedDB document so the seed reproduces the edited canvas exactly:
+  positions, sizes, prompt models, artefact HTML, arrow geometry and all 22
+  bindings.
+- Verified: `npm run build` and a wipe-and-reseed browser run; a normalized
+  shape/binding diff against the original document shows 0 differences across
+  22 shapes and 22 bindings.
+- The seed now opens zoomed to fit the (sprawling) layout rather than a fixed
+  camera, so it renders on any viewport.
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).
+- Provider 5xx are transient and surface as an artefact error card after the
+  two retries (observed: Gemini 503 on `gemini-3.6-flash`).
 
 ## Next
 

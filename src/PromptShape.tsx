@@ -105,6 +105,25 @@ export class PromptShapeUtil extends BaseBoxShapeUtil<PromptShape> {
 	}
 }
 
+function getExistingOutputs(
+	editor: Editor,
+	promptId: TLShapeId
+): { arrowId: TLShapeId; outputId: TLShapeId }[] {
+	const outputs: { arrowId: TLShapeId; outputId: TLShapeId }[] = []
+	for (const binding of editor.getBindingsToShape(promptId, 'arrow')) {
+		if (binding.props.terminal !== 'start') continue
+		const arrow = editor.getShape(binding.fromId)
+		if (!arrow || arrow.type !== 'arrow') continue
+		const endBinding = editor
+			.getBindingsFromShape(arrow.id, 'arrow')
+			.find((b) => b.id !== binding.id)
+		if (!endBinding) continue
+		const target = editor.getShape(endBinding.toId)
+		if (target?.type === 'artefact') outputs.push({ arrowId: arrow.id, outputId: target.id })
+	}
+	return outputs
+}
+
 function getIncomingArtefactContent(editor: Editor, promptId: TLShapeId): string[] {
 	const contents: string[] = []
 	const incoming = editor
@@ -234,80 +253,95 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 		const promptCenter = { x: bounds.x + bounds.w / 2, y: bounds.y + bounds.h / 2 }
 
 		const outputs: { model: string; outputId: TLShapeId }[] = []
+		const existingOutputs = getExistingOutputs(editor, current.id)
+		const reuse = existingOutputs.length === models.length
 
-		editor.run(() => {
-			const spawnedIds = (current.meta as { spawnedIds?: TLShapeId[] }).spawnedIds
-			if (spawnedIds && spawnedIds.length > 0) {
-				editor.deleteShapes(spawnedIds)
-			}
-
-			const nextSpawnedIds: TLShapeId[] = []
-
-			models.forEach((model, i) => {
-				const angle = -Math.PI / 2 + (2 * Math.PI * i) / models.length
-				const outputMidX = promptCenter.x + ARTEFACT_RADIUS * Math.cos(angle)
-				const outputMidY = promptCenter.y + ARTEFACT_RADIUS * Math.sin(angle)
-				const outputId = createShapeId()
-				const arrowId = createShapeId()
-
-				editor.createShape({
-					id: outputId,
-					type: 'artefact',
-					x: outputMidX - ARTEFACT_W / 2,
-					y: outputMidY - ARTEFACT_H / 2,
-					props: {
-						w: ARTEFACT_W,
-						h: ARTEFACT_H,
-						code: GENERATING_CODE,
-					},
+		if (reuse) {
+			editor.run(() => {
+				existingOutputs.forEach(({ outputId }, i) => {
+					editor.updateShape({ id: outputId, type: 'artefact', props: { code: GENERATING_CODE } })
+					outputs.push({ model: models[i], outputId })
 				})
-
-				editor.createShape({
-					id: arrowId,
-					type: 'arrow',
-					props: {
-						start: { x: promptCenter.x, y: promptCenter.y },
-						end: { x: outputMidX, y: outputMidY },
-						size: 's',
-						richText: toRichText(modelName(model)),
-					},
-				})
-
-				const bindingProps = {
-					normalizedAnchor: { x: 0.5, y: 0.5 },
-					isPrecise: false,
-					isExact: false,
-					snap: 'none' as const,
+				editor.updateShape({ id: current.id, type: current.type, meta: { spawnedIds: [] } })
+			})
+		} else {
+			editor.run(() => {
+				const spawnedIds = (current.meta as { spawnedIds?: TLShapeId[] }).spawnedIds
+				if (spawnedIds && spawnedIds.length > 0) {
+					editor.deleteShapes(spawnedIds)
 				}
 
-				editor.createBinding({
-					type: 'arrow',
-					fromId: arrowId,
-					toId: current.id,
-					props: { ...bindingProps, terminal: 'start' },
-				})
-				editor.createBinding({
-					type: 'arrow',
-					fromId: arrowId,
-					toId: outputId,
-					props: { ...bindingProps, terminal: 'end' },
+				const nextSpawnedIds: TLShapeId[] = []
+
+				models.forEach((model, i) => {
+					const angle = -Math.PI / 2 + (2 * Math.PI * i) / models.length
+					const outputMidX = promptCenter.x + ARTEFACT_RADIUS * Math.cos(angle)
+					const outputMidY = promptCenter.y + ARTEFACT_RADIUS * Math.sin(angle)
+					const outputId = createShapeId()
+					const arrowId = createShapeId()
+
+					editor.createShape({
+						id: outputId,
+						type: 'artefact',
+						x: outputMidX - ARTEFACT_W / 2,
+						y: outputMidY - ARTEFACT_H / 2,
+						props: {
+							w: ARTEFACT_W,
+							h: ARTEFACT_H,
+							code: GENERATING_CODE,
+						},
+					})
+
+					editor.createShape({
+						id: arrowId,
+						type: 'arrow',
+						props: {
+							start: { x: promptCenter.x, y: promptCenter.y },
+							end: { x: outputMidX, y: outputMidY },
+							size: 's',
+							richText: toRichText(modelName(model)),
+						},
+					})
+
+					const bindingProps = {
+						normalizedAnchor: { x: 0.5, y: 0.5 },
+						isPrecise: false,
+						isExact: false,
+						snap: 'none' as const,
+					}
+
+					editor.createBinding({
+						type: 'arrow',
+						fromId: arrowId,
+						toId: current.id,
+						props: { ...bindingProps, terminal: 'start' },
+					})
+					editor.createBinding({
+						type: 'arrow',
+						fromId: arrowId,
+						toId: outputId,
+						props: { ...bindingProps, terminal: 'end' },
+					})
+
+					nextSpawnedIds.push(outputId, arrowId)
+					outputs.push({ model, outputId })
 				})
 
-				nextSpawnedIds.push(outputId, arrowId)
-				outputs.push({ model, outputId })
+				editor.updateShape({ id: current.id, type: current.type, meta: { spawnedIds: nextSpawnedIds } })
 			})
-
-			editor.updateShape({ id: current.id, type: current.type, meta: { spawnedIds: nextSpawnedIds } })
-		})
-
-		const updateArtefact = (outputId: TLShapeId, code: string) => {
-			if (runIdRef.current !== runId) return
-			if (!editor.getShape(outputId)) return
-			editor.updateShape({ id: outputId, type: 'artefact', props: { code } })
 		}
 
 		const accumulated = new Map<TLShapeId, string>()
 		const pending = new Map<TLShapeId, string>()
+
+		const updateArtefact = (outputId: TLShapeId, code: string) => {
+			if (runIdRef.current !== runId) return
+			if (!editor.getShape(outputId)) return
+			pending.delete(outputId)
+			accumulated.delete(outputId)
+			editor.updateShape({ id: outputId, type: 'artefact', props: { code } })
+		}
+
 		const flushStreamedArtefacts = () => {
 			pending.forEach((code, outputId) => {
 				if (runIdRef.current !== runId) return
@@ -337,7 +371,6 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 						},
 					})
 				)
-        console.log(full);
 				if (!full.trim()) {
 					updateArtefact(outputId, errorCode('The model returned no output.'))
 				} else {
