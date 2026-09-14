@@ -15,12 +15,14 @@ export function DesignsHome({
 	designs,
 	onOpen,
 	onNew,
+	onShowcase,
 	onRename,
 	onDelete,
 }: {
 	designs: Design[]
 	onOpen: (id: string) => void
 	onNew: () => void
+	onShowcase: () => void
 	onRename: (id: string, name: string) => void
 	onDelete: (id: string) => void
 }) {
@@ -59,21 +61,38 @@ export function DesignsHome({
 				}}
 			>
 				<h1 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Designs</h1>
-				<button
-					type="button"
-					onClick={onNew}
-					style={{
-						padding: '8px 14px',
-						border: 'none',
-						borderRadius: 8,
-						background: 'var(--tl-color-primary)',
-						color: '#fff',
-						fontWeight: 600,
-						cursor: 'pointer',
-					}}
-				>
-					New design
-				</button>
+				<div style={{ display: 'flex', gap: 8 }}>
+					<button
+						type="button"
+						onClick={onShowcase}
+						style={{
+							padding: '8px 14px',
+							border: '1px solid var(--tl-color-divider)',
+							borderRadius: 8,
+							background: 'transparent',
+							color: 'inherit',
+							fontWeight: 600,
+							cursor: 'pointer',
+						}}
+					>
+						Showcase
+					</button>
+					<button
+						type="button"
+						onClick={onNew}
+						style={{
+							padding: '8px 14px',
+							border: 'none',
+							borderRadius: 8,
+							background: 'var(--tl-color-primary)',
+							color: '#fff',
+							fontWeight: 600,
+							cursor: 'pointer',
+						}}
+					>
+						New design
+					</button>
+				</div>
 			</header>
 			<div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
 				{designs.length === 0 ? (

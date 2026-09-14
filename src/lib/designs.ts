@@ -2,6 +2,7 @@ export type Design = {
 	id: string
 	name: string
 	updatedAt: number
+	showcase?: boolean
 }
 
 const STORAGE_KEY = 'tldesign.designs'
@@ -26,6 +27,17 @@ function saveDesigns(designs: Design[]) {
 
 export function createDesign(name: string): Design {
 	const design: Design = { id: crypto.randomUUID(), name, updatedAt: Date.now() }
+	saveDesigns([design, ...listDesigns()])
+	return design
+}
+
+export function createShowcaseDesign(): Design {
+	const design: Design = {
+		id: crypto.randomUUID(),
+		name: 'Showcase',
+		updatedAt: Date.now(),
+		showcase: true,
+	}
 	saveDesigns([design, ...listDesigns()])
 	return design
 }

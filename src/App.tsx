@@ -39,8 +39,9 @@ import { ArtefactShapeUtil } from './ArtefactShape'
 import { DesignsHome } from './DesignsHome'
 import { PromptShapeUtil } from './PromptShape'
 import { SettingsModal } from './SettingsModal'
-import { createDesign, deleteDesign, deleteDesignDocument, listDesigns, renameDesign, touchDesign } from './lib/designs'
+import { createDesign, createShowcaseDesign, deleteDesign, deleteDesignDocument, listDesigns, renameDesign, touchDesign } from './lib/designs'
 import { SettingsProvider } from './lib/settings'
+import { seedShowcase } from './lib/showcaseSeed'
 import { ArtefactTool, PromptTool } from './tools'
 
 const shapeUtils = [PromptShapeUtil, ArtefactShapeUtil]
@@ -123,6 +124,12 @@ function App() {
 		setActiveDesignId(design.id)
 	}
 
+	const handleShowcase = () => {
+		const design = createShowcaseDesign()
+		refreshDesigns()
+		setActiveDesignId(design.id)
+	}
+
 	const handleOpen = (id: string) => {
 		setActiveDesignId(id)
 	}
@@ -171,6 +178,11 @@ function App() {
 								tools={tools}
 								components={components}
 								overrides={overrides}
+								onMount={(editor) => {
+									if (activeDesign.showcase) {
+										setTimeout(() => seedShowcase(editor), 50)
+									}
+								}}
 							/>
 						</div>
 					</div>
@@ -179,6 +191,7 @@ function App() {
 						designs={designs}
 						onOpen={handleOpen}
 						onNew={handleNew}
+						onShowcase={handleShowcase}
 						onRename={handleRename}
 						onDelete={handleDelete}
 					/>

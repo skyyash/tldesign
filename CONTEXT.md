@@ -243,6 +243,18 @@ Build check: `npm run build`
 - Verified: `npm run build` and a browser test where the design-specific
   database appeared after opening the design and disappeared after deletion.
 
+### 20. Built-in showcase example (2026-09-13)
+
+- A `Showcase` button on the Designs home creates a local example design that
+  seeds two prompts, two prefilled HTML artefacts, labeled fan-out arrows, and a
+  chained second prompt (arrows from the artefacts into it). Static content, no
+  API calls.
+- Seeding is guarded by the `showcase` design flag and skips when the document
+  already contains prompts, so reopening never duplicates.
+- Verified: `npm run build` and a browser test (Showcase click opens the seeded
+  demo; the second prompt shows the `⇢ 2` input chip; reopen preserves the same
+  shape counts).
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).
