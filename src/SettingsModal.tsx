@@ -1,8 +1,40 @@
+import { useEffect, useState } from 'react'
 import { useSettings } from './lib/settings'
-import { PROVIDER_LIST } from './lib/providers'
+import { PROVIDER_LIST, ProviderModel, providerName } from './lib/providers'
+import { displayName, getModelCatalog } from './lib/modelCatalog'
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
 	const { settings, setApiKey } = useSettings()
+	const [catalog, setCatalog] = useState<ProviderModel[] | null>(null)
+	const [search, setSearch] = useState('')
+
+	useEffect(() => {
+		let cancelled = false
+		getModelCatalog(settings.apiKeys)
+			.then((models) => {
+				if (!cancelled) setCatalog(models)
+			})
+			.catch(() => {
+				if (!cancelled) setCatalog([])
+			})
+		return () => {
+			cancelled = true
+		}
+	}, [settings.apiKeys])
+
+	const query = search.trim().toLowerCase()
+	const filtered = (catalog ?? []).filter(
+		(model) =>
+			!query || model.name.toLowerCase().includes(query) || model.id.toLowerCase().includes(query)
+	)
+	const groups = new Map<string, ProviderModel[]>()
+	for (const model of filtered) {
+		const name = providerName(model.provider)
+		const list = groups.get(name)
+		if (list) list.push(model)
+		else groups.set(name, [model])
+	}
+	const groupEntries = [...groups.entries()]
 
 	return (
 		<div
@@ -20,8 +52,8 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 			<div
 				onClick={(e) => e.stopPropagation()}
 				style={{
-					width: 'min(460px, 92vw)',
-					maxHeight: '82vh',
+					width: 'min(520px, 92vw)',
+					maxHeight: '84vh',
 					overflow: 'auto',
 					background: 'var(--tl-color-panel)',
 					color: 'var(--tl-color-text-1)',
@@ -91,6 +123,85 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 							</div>
 						)
 					})}
+
+					<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+						<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+							<label style={{ fontWeight: 600, fontSize: 13 }}>Models</label>
+							<span style={{ fontSize: 11, opacity: 0.6 }}>
+								{catalog ? `${filtered.length} shown` : ''}
+							</span>
+						</div>
+						<input
+							type="search"
+							value={search}
+							placeholder="Search models..."
+							spellCheck={false}
+							onChange={(e) => setSearch(e.target.value)}
+							style={{
+								width: '100%',
+								boxSizing: 'border-box',
+								padding: '6px 10px',
+								border: '1px solid var(--tl-color-divider)',
+								borderRadius: 8,
+								background: 'var(--tl-color-panel-contrast)',
+								color: 'inherit',
+								fontSize: 13,
+							}}
+						/>
+						<div
+							style={{
+								maxHeight: 320,
+								overflow: 'auto',
+								border: '1px solid var(--tl-color-divider)',
+								borderRadius: 8,
+							}}
+						>
+							{catalog === null ? (
+								<div style={{ padding: 14, fontSize: 13, opacity: 0.6 }}>Loading models…</div>
+							) : groupEntries.length === 0 ? (
+								<div style={{ padding: 14, fontSize: 13, opacity: 0.6 }}>
+									No models match your search.
+								</div>
+							) : (
+								groupEntries.map(([name, models]) => (
+									<div key={name}>
+										<div
+											style={{
+												padding: '6px 10px',
+												fontSize: 11,
+												fontWeight: 700,
+												textTransform: 'uppercase',
+												letterSpacing: '0.05em',
+												opacity: 0.6,
+												background: 'var(--tl-color-panel-contrast)',
+												borderBottom: '1px solid var(--tl-color-divider)',
+											}}
+										>
+											{name}
+										</div>
+										{models.map((model) => (
+											<div
+												key={model.id}
+												style={{
+													display: 'flex',
+													alignItems: 'baseline',
+													justifyContent: 'space-between',
+													gap: 8,
+													padding: '7px 10px',
+													borderBottom: '1px solid var(--tl-color-divider)',
+												}}
+											>
+												<span style={{ fontSize: 13 }}>{displayName(model)}</span>
+												<span style={{ fontSize: 11, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+													{model.id}
+												</span>
+											</div>
+										))}
+									</div>
+								))
+							)}
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

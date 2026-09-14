@@ -147,6 +147,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 
 	const [catalog, setCatalog] = useState<ProviderModel[] | null>(null)
 	const [open, setOpen] = useState(false)
+	const [search, setSearch] = useState('')
 	const dropdownRef = useRef<HTMLDivElement>(null)
 	const runIdRef = useRef(0)
 
@@ -184,7 +185,11 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	}
 
 	const groups = new Map<string, ProviderModel[]>()
+	const query = search.trim().toLowerCase()
 	for (const model of catalog ?? []) {
+		if (query && !model.name.toLowerCase().includes(query) && !model.id.toLowerCase().includes(query)) {
+			continue
+		}
 		const name = providerName(model.provider)
 		const list = groups.get(name)
 		if (list) list.push(model)
@@ -214,7 +219,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 			incomingContent.length > 0
 				? `Here are previous outputs from connected artefacts:\n\n${incomingContent.join(
 						'\n\n---\n'
-				  )}\n\nNow implement the following: ${promptText || 'Create a simple, attractive design.'}`
+				  )}\n\nConsider previous outputs to implement the following: ${promptText || 'Create a simple, attractive design.'}`
 				: promptText || 'Create a simple, attractive design.'
 		const messages: ChatMessage[] = [
 			{ role: 'system', content: SYSTEM_PROMPT },
@@ -328,6 +333,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 						},
 					})
 				)
+        console.log(full);
 				if (!full.trim()) {
 					updateArtefact(outputId, errorCode('The model returned no output.'))
 				} else {
@@ -462,60 +468,84 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 									>
 										Add an API key in Settings (gear icon) to connect a provider.
 									</div>
-								) : groupEntries.length === 0 ? (
-									<div
-										style={{
-											padding: '10px 12px',
-											fontSize: 13,
-											opacity: 0.85,
-											maxWidth: 220,
-											lineHeight: 1.4,
-										}}
-									>
-										No models available. Add a provider key in Settings.
-									</div>
 								) : (
-									groupEntries.map(([name, models]) => (
-										<div key={name}>
-											<div
-												style={{
-													padding: '4px 8px',
-													fontSize: 11,
-													fontWeight: 700,
-													textTransform: 'uppercase',
-													letterSpacing: '0.05em',
-													opacity: 0.6,
-												}}
-											>
-												{name}
-											</div>
-											{models.map((model) => {
-												const key = modelKey(model.provider, model.id)
-												return (
-													<label
-														key={key}
-														style={{
-															display: 'flex',
-															alignItems: 'center',
-															gap: 8,
-															padding: '6px 8px',
-															borderRadius: 6,
-															cursor: 'pointer',
-															fontSize: 13,
-															color: 'var(--tl-color-text-1)',
-														}}
-													>
-														<input
-															type="checkbox"
-															checked={selectedModels.includes(key)}
-															onChange={() => toggleModel(key)}
-														/>
-														{displayName(model)}
-													</label>
-												)
-											})}
+									<>
+										<input
+											type="search"
+											value={search}
+											placeholder="Search models..."
+											spellCheck={false}
+											onChange={(e) => setSearch(e.target.value)}
+											onPointerDown={(e) => e.stopPropagation()}
+											style={{
+												width: '100%',
+												boxSizing: 'border-box',
+												padding: '5px 8px',
+												border: '1px solid var(--tl-color-divider)',
+												borderRadius: 6,
+												background: 'var(--tl-color-panel-contrast)',
+												color: 'var(--tl-color-text-1)',
+												fontSize: 12,
+												marginBottom: 4,
+											}}
+										/>
+										<div style={{ maxHeight: 240, overflowY: 'auto' }}>
+											{groupEntries.length === 0 ? (
+												<div
+													style={{
+														padding: '10px 12px',
+														fontSize: 13,
+														opacity: 0.85,
+														lineHeight: 1.4,
+													}}
+												>
+													No models available. Add a provider key in Settings.
+												</div>
+											) : (
+												groupEntries.map(([name, models]) => (
+													<div key={name}>
+														<div
+															style={{
+																padding: '4px 8px',
+																fontSize: 11,
+																fontWeight: 700,
+																textTransform: 'uppercase',
+																letterSpacing: '0.05em',
+																opacity: 0.6,
+															}}
+														>
+															{name}
+														</div>
+														{models.map((model) => {
+															const key = modelKey(model.provider, model.id)
+															return (
+																<label
+																	key={key}
+																	style={{
+																		display: 'flex',
+																		alignItems: 'center',
+																		gap: 8,
+																		padding: '6px 8px',
+																		borderRadius: 6,
+																		cursor: 'pointer',
+																		fontSize: 13,
+																		color: 'var(--tl-color-text-1)',
+																	}}
+																>
+																	<input
+																		type="checkbox"
+																		checked={selectedModels.includes(key)}
+																		onChange={() => toggleModel(key)}
+																	/>
+																	{displayName(model)}
+																</label>
+															)
+														})}
+													</div>
+												))
+											)}
 										</div>
-									))
+									</>
 								)}
 							</div>
 						)}

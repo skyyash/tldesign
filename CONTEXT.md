@@ -266,6 +266,17 @@ Build check: `npm run build`
 - Verified with a live Gemini key: the model list fetches and a real prompt
   streams generated HTML into an artefact.
 
+### 22. Restored catalog browser + prompt dropdown search (2026-09-14)
+
+- The settings modal restored a model catalog browser: models from enabled
+  providers grouped by provider, with a search box, in a fixed-height scrollable
+  list (read-only reference).
+- The prompt's model dropdown now has a search bar and a fixed-height scrollable
+  list instead of an unbounded list.
+- Verified: `npm run build` and browser test (both searches filter models; the
+  dropdown list scrolls at a fixed height; the settings catalog groups by
+  provider).
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).
