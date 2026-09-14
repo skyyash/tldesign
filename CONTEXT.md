@@ -288,6 +288,21 @@ Build check: `npm run build`
   dropdown shows only enabled models; the list overflows at a fixed 240px and
   scrolls).
 
+### 24. Showcase becomes a project + richer demo (2026-09-14)
+
+- The Showcase button is gone from the Designs home. The demo design is now a
+  normal project: it auto-seeds once on first run as "Pulse landing page" and
+  shows in the designs list like any design.
+- The demo is more involved: a source prompt fans out to three model-labelled
+  artefacts (GPT-4o, Gemini, Groq) with three visually distinct seeded HTML
+  landing pages, all three chain into a synthesis prompt (`⇢ 3` input chip),
+  which produces a final refined artefact (labelled Synthesize). Prompts are
+  preconfigured with model selections so a live re-run works once keys are
+  pasted and models enabled.
+- Verified: `npm run build` and browser test from a wiped localStorage
+  (button gone; project auto-created; 2 prompts, 4 artefacts, 7 labelled
+  arrows, chain chip; all iframes carry seeded HTML).
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).

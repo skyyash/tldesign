@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
 	ArrowDownToolbarItem,
 	ArrowLeftToolbarItem,
@@ -124,11 +124,13 @@ function App() {
 		setActiveDesignId(design.id)
 	}
 
-	const handleShowcase = () => {
-		const design = createShowcaseDesign()
-		refreshDesigns()
-		setActiveDesignId(design.id)
-	}
+	useEffect(() => {
+		if (!listDesigns().some((design) => design.showcase)) {
+			createShowcaseDesign()
+			refreshDesigns()
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [])
 
 	const handleOpen = (id: string) => {
 		setActiveDesignId(id)
@@ -191,7 +193,6 @@ function App() {
 						designs={designs}
 						onOpen={handleOpen}
 						onNew={handleNew}
-						onShowcase={handleShowcase}
 						onRename={handleRename}
 						onDelete={handleDelete}
 					/>

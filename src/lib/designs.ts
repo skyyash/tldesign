@@ -34,7 +34,7 @@ export function createDesign(name: string): Design {
 export function createShowcaseDesign(): Design {
 	const design: Design = {
 		id: crypto.randomUUID(),
-		name: 'Showcase',
+		name: 'Pulse landing page',
 		updatedAt: Date.now(),
 		showcase: true,
 	}
