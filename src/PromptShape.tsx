@@ -175,8 +175,10 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	}, [open])
 
 	const hasKey = Object.values(settings.apiKeys).some((key) => !!key)
-	const selectedModels = shape.props.models.filter((key) =>
-		catalog?.some((model) => modelKey(model.provider, model.id) === key)
+	const selectedModels = shape.props.models.filter(
+		(key) =>
+			settings.enabledModels.includes(key) &&
+			catalog?.some((model) => modelKey(model.provider, model.id) === key)
 	)
 
 	const modelName = (key: string) => {
@@ -187,6 +189,8 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 	const groups = new Map<string, ProviderModel[]>()
 	const query = search.trim().toLowerCase()
 	for (const model of catalog ?? []) {
+		const key = modelKey(model.provider, model.id)
+		if (!settings.enabledModels.includes(key)) continue
 		if (query && !model.name.toLowerCase().includes(query) && !model.id.toLowerCase().includes(query)) {
 			continue
 		}
@@ -489,7 +493,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 												marginBottom: 4,
 											}}
 										/>
-										<div style={{ maxHeight: 240, overflowY: 'auto' }}>
+										<div style={{ maxHeight: 240, overflowY: 'auto' }} onWheel={(e) => e.stopPropagation()}>
 											{groupEntries.length === 0 ? (
 												<div
 													style={{
@@ -499,7 +503,7 @@ function PromptComponent({ shape }: { shape: PromptShape }) {
 														lineHeight: 1.4,
 													}}
 												>
-													No models available. Add a provider key in Settings.
+													No models enabled. Enable models in Settings.
 												</div>
 											) : (
 												groupEntries.map(([name, models]) => (

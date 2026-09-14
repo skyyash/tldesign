@@ -277,6 +277,17 @@ Build check: `npm run build`
   dropdown list scrolls at a fixed height; the settings catalog groups by
   provider).
 
+### 23. Model enabling from catalog + dropdown scroll fix (2026-09-14)
+
+- Settings store re-added `enabledModels` (localStorage); the catalog browser
+  now has per-model enable toggles.
+- The prompt dropdown lists only enabled models.
+- Fixed dropdown scroll: wheel events over the dropdown list and settings
+  catalog stop propagation, so tldraw's canvas no longer hijacks them.
+- Verified: `npm run build` and browser test (catalog toggles persist; the
+  dropdown shows only enabled models; the list overflows at a fixed 240px and
+  scrolls).
+
 ## Known issues
 
 - Navbar profile button is a non-functional placeholder (no auth yet).

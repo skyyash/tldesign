@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useSettings } from './lib/settings'
-import { PROVIDER_LIST, ProviderModel, providerName } from './lib/providers'
+import { PROVIDER_LIST, ProviderModel, modelKey, providerName } from './lib/providers'
 import { displayName, getModelCatalog } from './lib/modelCatalog'
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
-	const { settings, setApiKey } = useSettings()
+	const { settings, setApiKey, toggleModel } = useSettings()
 	const [catalog, setCatalog] = useState<ProviderModel[] | null>(null)
 	const [search, setSearch] = useState('')
 
@@ -149,6 +149,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 							}}
 						/>
 						<div
+							onWheel={(e) => e.stopPropagation()}
 							style={{
 								maxHeight: 320,
 								overflow: 'auto',
@@ -179,24 +180,39 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
 										>
 											{name}
 										</div>
-										{models.map((model) => (
-											<div
-												key={model.id}
-												style={{
-													display: 'flex',
-													alignItems: 'baseline',
-													justifyContent: 'space-between',
-													gap: 8,
-													padding: '7px 10px',
-													borderBottom: '1px solid var(--tl-color-divider)',
-												}}
-											>
-												<span style={{ fontSize: 13 }}>{displayName(model)}</span>
-												<span style={{ fontSize: 11, opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-													{model.id}
-												</span>
-											</div>
-										))}
+										{models.map((model) => {
+											const key = modelKey(model.provider, model.id)
+											return (
+												<label
+													key={key}
+													style={{
+														display: 'flex',
+														alignItems: 'center',
+														gap: 8,
+														padding: '7px 10px',
+														borderBottom: '1px solid var(--tl-color-divider)',
+														cursor: 'pointer',
+													}}
+												>
+													<input
+														type="checkbox"
+														checked={settings.enabledModels.includes(key)}
+														onChange={() => toggleModel(key)}
+													/>
+													<span style={{ fontSize: 13, flex: 1 }}>{displayName(model)}</span>
+													<span
+														style={{
+															fontSize: 11,
+															opacity: 0.6,
+															overflow: 'hidden',
+															textOverflow: 'ellipsis',
+														}}
+													>
+														{model.id}
+													</span>
+												</label>
+											)
+										})}
 									</div>
 								))
 							)}

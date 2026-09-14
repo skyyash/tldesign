@@ -2,9 +2,11 @@ import { createContext, useContext, useState, type ReactNode } from 'react'
 import { ProviderId } from './providers/types'
 
 const SESSION_KEY = 'tldesign.apiKeys'
+const LOCAL_KEY = 'tldesign.settings'
 
 export type Settings = {
 	apiKeys: Partial<Record<ProviderId, string>>
+	enabledModels: string[]
 }
 
 function loadSettings(): Settings {
@@ -30,12 +32,27 @@ function loadSettings(): Settings {
 		// ignore storage errors
 	}
 
-	return { apiKeys }
+	let enabledModels: string[] = []
+	try {
+		const raw = localStorage.getItem(LOCAL_KEY)
+		if (raw) {
+			const parsed = JSON.parse(raw) as Partial<Settings>
+			if (Array.isArray(parsed.enabledModels)) {
+				enabledModels = parsed.enabledModels.filter((id): id is string => typeof id === 'string')
+			}
+		}
+	} catch {
+		// ignore storage errors
+	}
+
+	return { apiKeys, enabledModels }
 }
 
 interface SettingsContextValue {
 	settings: Settings
 	setApiKey: (provider: ProviderId, key: string) => void
+	toggleModel: (key: string) => void
+	setEnabledModels: (keys: string[]) => void
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null)
@@ -47,6 +64,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 		setSettings(next)
 		try {
 			sessionStorage.setItem(SESSION_KEY, JSON.stringify(next.apiKeys))
+			localStorage.setItem(LOCAL_KEY, JSON.stringify({ enabledModels: next.enabledModels }))
 		} catch {
 			// ignore storage errors
 		}
@@ -54,11 +72,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
 	const setApiKey = (provider: ProviderId, key: string) => {
 		const apiKeys = { ...settings.apiKeys, [provider]: key }
-		update({ apiKeys })
+		update({ apiKeys, enabledModels: settings.enabledModels })
+	}
+
+	const toggleModel = (key: string) => {
+		const has = settings.enabledModels.includes(key)
+		const enabledModels = has
+			? settings.enabledModels.filter((model) => model !== key)
+			: [...settings.enabledModels, key]
+		update({ apiKeys: settings.apiKeys, enabledModels })
+	}
+
+	const setEnabledModels = (enabledModels: string[]) => {
+		update({ apiKeys: settings.apiKeys, enabledModels })
 	}
 
 	return (
-		<SettingsContext.Provider value={{ settings, setApiKey }}>
+		<SettingsContext.Provider value={{ settings, setApiKey, toggleModel, setEnabledModels }}>
 			{children}
 		</SettingsContext.Provider>
 	)
